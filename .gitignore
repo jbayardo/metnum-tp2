@@ -27,5 +27,8 @@
 *.out
 *.app
 
+.idea
 .DS_store
 .DS_Store
+CMakeLists.txt
+Makefile
