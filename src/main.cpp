@@ -16,24 +16,6 @@ int main(int argc, char *argv[]) {
         method = SolutionMethod::PCA_KNN;
     }
 
-    /*
-     * Leemos el training set en una matriz
-     */
-    std::fstream train("train.csv", std::ios_base::in);
-
-    std::vector<std::vector<char>> matrix;
-    while (!train.eof() && train.good()) {
-        for (int i = 0; i < DIM*DIM + 1; ++i) {
-
-        }
-    }
-
-    if (!train.good()) {
-        // TODO: die
-    }
-
-    std::fstream test("test.csv", std::ios_base::in);
-
     std::string path;
     int neighbours, alpha, tests;
     std::fstream input(argv[1], std::ios_base::in);
@@ -44,15 +26,20 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < tests; ++i) {
         input >> masks[i];
-
-
-        //std::fstream outHandle(output, std::ios_base::out | std::ios_base::ate | std::ios_base::app);
-
-        //if (outHandle.good()) {
-        //    outHandle << ;
-        //}
-
     }
 
+    std::fstream train(path + "train.csv", std::ios_base::in);
+
+    while (!train.eof() && train.good()) {
+        for (int i = 0; i < DIM*DIM + 1; ++i) {
+
+        }
+    }
+
+    if (!train.good()) {
+        // TODO: die
+    }
+
+    std::fstream test(path + "test.csv", std::ios_base::in);
     return 0;
 }
