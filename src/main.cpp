@@ -4,16 +4,18 @@
 
 #include "Problem.h"
 #include "Matrix.h"
-#include <string>
 #include <bitset>
-#include <cstring>
 #include <fstream>
+#include <queue>
 
 #define DIM 28
 #define TRAIN_SIZE 42000
 #define TEST_SIZE 28000
+// Matriz de datos, vector, número de línea.
+typedef std::function<double(const Matrix &, const Matrix &, int i)> Norm;
+typedef unsigned char Label;
 
-void loadTrainingSet(std::string path, Matrix &trainingSet, short *trainingLabels) {
+void loadTrainingSet(std::string path, Matrix &trainingSet, Label *trainingLabels) {
     std::fstream train(path + "train.csv", std::ios_base::in);
     std::cout << "Levantando training set" << std::endl;
     // Obtenemos el header, así después el algorítmo sólo levanta los datos.
@@ -25,7 +27,7 @@ void loadTrainingSet(std::string path, Matrix &trainingSet, short *trainingLabel
 
     // Levantamos una linea del csv y la separamos por coma
     while (getline(train,line) && !train.eof() && !train.bad()) {
-        // Buscamos cuál es el label
+        // Buscamos cuál es el Label
         std::string::size_type prev = line.find_first_of(',');
 
         if (prev == std::string::npos) {
@@ -35,13 +37,15 @@ void loadTrainingSet(std::string path, Matrix &trainingSet, short *trainingLabel
             throw std::string("Puto");
         }
 
-        char label = line.substr(0, prev).c_str()[0] - 48;
+        Label lbl = line.substr(0, prev).c_str()[0] - 48;
 
-        if (label > 9) {
+        if (lbl > 9) {
             std::cerr << "Label erroneo en la linea " << l << " en el archivo de training." << std::endl;
             train.close();
             throw std::string("Culo"); // TODO:
         }
+
+        trainingLabels[l] = lbl;
 
         // Este contador es el número de pixel que estamos procesando en la imagen
         int i = 0;
@@ -53,7 +57,7 @@ void loadTrainingSet(std::string path, Matrix &trainingSet, short *trainingLabel
             if (cur != std::string::npos) {
                 std::string current = line.substr(prev + 1, cur);
                 // Levantamos el string como un char
-                unsigned char out = (unsigned char) std::stoi(current);
+                Label out = (Label) std::stoi(current);
                 trainingSet(l, i) = out;
             }
 
@@ -73,7 +77,7 @@ void loadTrainingSet(std::string path, Matrix &trainingSet, short *trainingLabel
     train.close();
 }
 
-void loadTestingSet(std::string path, Matrix &testingSet, short *testingLabels) {
+void loadTestingSet(std::string path, Matrix &testingSet, Label *testingLabels) {
     std::fstream test(path + "test.csv", std::ios_base::in);
     std::cout << "Levantando testing set" << std::endl;
     // Obtenemos el header, así después el algorítmo sólo levanta los datos.
@@ -85,9 +89,9 @@ void loadTestingSet(std::string path, Matrix &testingSet, short *testingLabels) 
 
     // Levantamos una linea del csv y la separamos por coma
     while (getline(test,line) && !test.eof() && !test.bad()) {
-        // Buscamos cuál es el label
+        // Buscamos cuál es el Label
         std::string::size_type prev = line.find_first_of(',');
-        testingSet(l, 0) = (unsigned char) std::stoi(line.substr(0, prev));
+        testingSet(l, 0) = (Label) std::stoi(line.substr(0, prev));
 
         // Este contador es el número de pixel que estamos procesando en la imagen
         int i = 1;
@@ -98,7 +102,7 @@ void loadTestingSet(std::string path, Matrix &testingSet, short *testingLabels) 
 
             if (cur != std::string::npos) {
                 // Levantamos el string como un char
-                testingSet(l, i) = (unsigned char) std::stoi(line.substr(prev + 1, cur));
+                testingSet(l, i) = (Label) std::stoi(line.substr(prev + 1, cur));
             }
 
             prev = cur;
@@ -147,15 +151,42 @@ int main(int argc, char *argv[]) {
     input.close();
 
     Matrix trainingSet = Matrix(TRAIN_SIZE, DIM*DIM);
-    short *trainingLabels = new short[TRAIN_SIZE];
+    Label *trainingLabels = new Label[TRAIN_SIZE];
     loadTrainingSet(path, trainingSet, trainingLabels);
 
     Matrix testingSet = Matrix(TEST_SIZE, DIM*DIM);
-    short *testingLabels = new short[TEST_SIZE];
+    Label *testingLabels = new Label[TEST_SIZE];
     loadTestingSet(path, testingSet, trainingLabels);
 
-    std::cout << testingSet;
+
     return 0;
+}
+
+Label kNN(int k, const Matrix &trainingSet, Label *trainingLabels, const Matrix &vector, Norm &f) {
+    std::priority_queue<std::pair<double, Label>> distances;
+
+    for (int i = 0; i < trainingSet.rows(); ++i) {
+        distances.push(std::pair<double, Label>(f(trainingSet, vector, i), trainingLabels[i]));
+    }
+
+    int i = 0;
+    int labels[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+    while (!distances.empty() && i < k) {
+        labels[distances.top().second]++;
+        distances.pop();
+        ++i;
+    }
+
+    Label maximum = 0;
+
+    for (int j = 0; j < 10; ++j) {
+        if (labels[j] > maximum) {
+            maximum = labels[j];
+        }
+    }
+
+    return maximum;
 }
 
 /*train >> trainingLabels[l];

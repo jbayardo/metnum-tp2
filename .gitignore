@@ -27,6 +27,9 @@
 *.out
 *.app
 
+*.pyc
+.deps
+__pycache__
 .idea
 .DS_store
 .DS_Store
