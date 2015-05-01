@@ -18,10 +18,23 @@ class Matrix {
 public:
     Matrix(const Matrix &m);
     Matrix(int N, int M, int lband = MAGIC_NUMBER, int uband = MAGIC_NUMBER);
-    int inline rows() const;
-    int inline columns() const;
-    int inline upper_bandwidth() const;
-    int inline lower_bandwidth() const;
+
+    int inline rows() const {
+        return this->N;
+    }
+
+    int inline columns() const {
+        return this->M;
+    }
+
+    int inline upper_bandwidth() const {
+        return this->upper_bandwidth();
+    }
+
+    int inline lower_bandwidth() const {
+        return this->lower_bandwidth();
+    }
+
     unsigned char & operator()(const int &i, const int &j);
     const unsigned char & operator()(const int &i, const int &j) const;
     Matrix & operator=(const Matrix &m);

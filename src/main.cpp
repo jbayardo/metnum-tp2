@@ -162,8 +162,11 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+template <typename T>
+using min_queue = std::priority_queue<T, std::vector<T>, std::greater<T>>;
+
 Label kNN(int k, const Matrix &trainingSet, Label *trainingLabels, const Matrix &vector, Norm &f) {
-    std::priority_queue<std::pair<double, Label>> distances;
+    min_queue<std::pair<double, Label>> distances;
 
     for (int i = 0; i < trainingSet.rows(); ++i) {
         distances.push(std::pair<double, Label>(f(trainingSet, vector, i), trainingLabels[i]));

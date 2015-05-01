@@ -45,22 +45,6 @@ Matrix::Matrix(int N, int M, int lband, int uband)
     }
 }
 
-int inline Matrix::rows() const {
-    return this->N;
-}
-
-int inline Matrix::columns() const {
-    return this->M;
-}
-
-int inline Matrix::upper_bandwidth() const {
-    return this->uband;
-}
-
-int inline Matrix::lower_bandwidth() const {
-    return this->lband;
-}
-
 unsigned char &Matrix::operator()(const int &i, const int &j) {
     if (i >= this->rows() || j >= this->columns()) {
         throw new std::out_of_range("Index access out of range");
@@ -239,16 +223,15 @@ Matrix operator*(const Matrix &m, const unsigned char &c) {
 
 Matrix operator*(const Matrix &m, const Matrix &n) {
     if (m.columns() == n.rows()) {
-        int max_lower_upper = std::max(m.lower_bandwidth(), n.upper_bandwidth());
-        int max_upper_lower = std::max(m.upper_bandwidth(), n.lower_bandwidth());
+        int lower = std::max(m.lower_bandwidth(), n.lower_bandwidth());
+        int upper = std::max(m.upper_bandwidth(), n.upper_bandwidth());
 
-        Matrix output(m.rows(), n.columns(), max_lower_upper, max_upper_lower);
+        Matrix output(m.rows(), n.columns(), lower, upper);
 
         int diagonal = std::min(output.columns(), output.rows());
 
         for (int d = 0; d < diagonal; ++d) {
-            for (int j = d - output.lower_bandwidth(); j < std::min(d + output.upper_bandwidth(), output.columns()); ++j) {
-
+            for (int j = std::max(d - lower, 0); j < std::min(upper, output.columns()); ++j) {
                 for (int k = 0; k < output.columns();  ++k) {
                     output(d, j) += m(d, k) * n(k, j);
                 }
