@@ -3,6 +3,7 @@
 //
 
 #include "Matrix.h"
+#include <stdexcept>
 
 const unsigned char zero = 0;
 
@@ -15,6 +16,26 @@ Matrix::Matrix(const Matrix &m) : N(m.rows()), M(m.columns()), uband(m.upper_ban
 
         for (int j = 0; j < bound; ++j) {
             this->matrix[i][j] = m.matrix[i][j];
+        }
+    }
+}
+
+template <int K>
+Matrix::Matrix(const Matrix &m, const std::bitset<K> &filter)
+        : N((int)filter.count()), M(m.columns()), uband(m.upper_bandwidth()), lband(m.lower_bandwidth()) {
+    int last = 0;
+    int bound = this->lower_bandwidth() + this->upper_bandwidth() + 1;
+    this->matrix = new unsigned char*[this->rows()];
+
+    for (int i = 0; i < m.rows(); ++i) {
+        if (filter.test((std::size_t)i)) {
+            this->matrix[last] = new unsigned char[bound];
+
+            for (int j = 0; j < bound; ++j) {
+                this->matrix[last][j] = m.matrix[last][j];
+            }
+
+            last++;
         }
     }
 }
@@ -40,7 +61,7 @@ Matrix::Matrix(int N, int M, int lband, int uband)
         this->matrix[i] = new unsigned char[bound];
 
         for (int j = 0; j < bound; ++j) {
-            this->matrix[i][j] = 0.0;
+            this->matrix[i][j] = 0;
         }
     }
 }

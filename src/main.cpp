@@ -6,6 +6,7 @@
 #include "Matrix.h"
 #include <bitset>
 #include <fstream>
+#include <functional>
 #include <queue>
 
 #define DIM 28
@@ -165,6 +166,9 @@ int main(int argc, char *argv[]) {
 template <typename T>
 using min_queue = std::priority_queue<T, std::vector<T>, std::greater<T>>;
 
+/*
+ * Devuelve un número del 0 al 9 que representa el dígito reconocido
+ */
 Label kNN(int k, const Matrix &trainingSet, Label *trainingLabels, const Matrix &vector, Norm &f) {
     min_queue<std::pair<double, Label>> distances;
 
@@ -183,19 +187,11 @@ Label kNN(int k, const Matrix &trainingSet, Label *trainingLabels, const Matrix 
 
     Label maximum = 0;
 
-    for (int j = 0; j < 10; ++j) {
+    for (Label j = 0; j < 10; ++j) {
         if (labels[j] > maximum) {
-            maximum = labels[j];
+            maximum = j;
         }
     }
 
     return maximum;
 }
-
-/*train >> trainingLabels[l];
-
-for (int i = 0; i < DIM*DIM; ++i) {
-    std::cin >> trainingSet(l, i);
-}
-
-++l;*/

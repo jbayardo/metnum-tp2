@@ -6,6 +6,7 @@
 #define TP2_MATRIX_H
 
 #include <iostream>
+#include <bitset>
 
 // Este magic number nos dice cuándo convertir automáticamente una matriz banda en una matriz normal.
 #define MAGIC_NUMBER 562154
@@ -17,6 +18,10 @@ class Matrix {
     friend std::ostream &operator<<(std::ostream &, const Matrix &);
 public:
     Matrix(const Matrix &m);
+
+    template <int K>
+    Matrix(const Matrix &m, const std::bitset<K> &filter);
+
     Matrix(int N, int M, int lband = MAGIC_NUMBER, int uband = MAGIC_NUMBER);
 
     int inline rows() const {
@@ -28,11 +33,11 @@ public:
     }
 
     int inline upper_bandwidth() const {
-        return this->upper_bandwidth();
+        return this->uband;
     }
 
     int inline lower_bandwidth() const {
-        return this->lower_bandwidth();
+        return this->lband;
     }
 
     unsigned char & operator()(const int &i, const int &j);
@@ -42,6 +47,7 @@ public:
     bool operator!=(const Matrix &m) const;
     Matrix & operator+=(const Matrix &m);
     Matrix & operator*=(const unsigned char &c);
+
     ~Matrix();
 private:
     // Matrix
