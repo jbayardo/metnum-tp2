@@ -2,18 +2,19 @@
 // Created by Julian Bayardo on 4/25/15.
 //
 
-#include "Problem.h"
-#include "Matrix.h"
+#include <vector>
+#include <functional>
 #include <bitset>
 #include <fstream>
-#include <functional>
 #include <queue>
+#include <cmath>
+#include "Problem.h"
+#include "Matrix.h"
 
 #define DIM 28
 #define TRAIN_SIZE 42000
 #define TEST_SIZE 28000
-// Matriz de datos, vector, número de línea.
-typedef std::function<double(const Matrix &, const Matrix &, int i)> Norm;
+
 typedef unsigned char Label;
 
 void loadTrainingSet(std::string path, Matrix &trainingSet, Label *trainingLabels) {
@@ -166,10 +167,27 @@ int main(int argc, char *argv[]) {
 template <typename T>
 using min_queue = std::priority_queue<T, std::vector<T>, std::greater<T>>;
 
+// Matriz de datos, vector, número de línea.
+typedef std::function<double(const Matrix &, const std::vector<double> &, int)> DistanceF;
+
+const DistanceF L2 = DistanceF([](const Matrix &A, const std::vector<double> &v, int i) -> double {
+    if (v.size() < A.columns()) {
+        throw new std::out_of_range("Invalid size for vector");
+    }
+
+    double output = 0.0;
+
+    for (int j = 0; j < A.columns(); ++j) {
+        output += (static_cast<double>(A(i, j)) - v[i]) * (static_cast<double>(A(i, j)) - v[i]);
+    }
+
+    return std::sqrt(output);
+});
+
 /*
  * Devuelve un número del 0 al 9 que representa el dígito reconocido
  */
-Label kNN(int k, const Matrix &trainingSet, Label *trainingLabels, const Matrix &vector, Norm &f) {
+Label kNN(int k, const Matrix &trainingSet, Label *trainingLabels, const std::vector<double> &vector, const DistanceF &f) {
     min_queue<std::pair<double, Label>> distances;
 
     for (int i = 0; i < trainingSet.rows(); ++i) {
@@ -194,4 +212,65 @@ Label kNN(int k, const Matrix &trainingSet, Label *trainingLabels, const Matrix 
     }
 
     return maximum;
+}
+
+typedef std::function<double(const std::vector<double> &v)> Norm;
+
+const Norm N2 = Norm([](const std::vector<double> &v) -> double {
+    double output = 0.0;
+
+    for (int i = 0; i < v.size(); ++i) {
+        output += i*i;
+    }
+
+    return std::sqrt(output);
+});
+
+std::vector<double> operator*(const Matrix &m, const std::vector<double> &n) {
+    if (n.size() < m.columns()) {
+        throw new std::out_of_range("Invalid vector size for matrix product");
+    }
+
+    std::vector<double> output = std::vector<double>();
+
+    for (int i = 0; i < m.rows(); ++i) {
+        double tmp = 0.0;
+
+        for (int j = 0; j < m.columns(); ++j) {
+            tmp += m(i, j) * n[j];
+        }
+
+        output[i] = tmp;
+    }
+
+    return output;
+}
+
+/*
+ * Obtiene el autovalor dominante en módulo de una matriz.
+ *
+ * @param A matriz para buscar autoespacios
+ * @param x vector inicial del algoritmo
+ */
+std::pair<double, std::vector<double>> powerIteration(const Matrix &A, const std::vector<double> &x, const Norm &norm, unsigned int iterations = 100) {
+    std::vector<double> C(A.columns());
+
+    // Copiamos el vector hasta la coordenada que vamos a usar
+    for (int i = 0; i < A.columns(); ++i) {
+        C[i] = x[i];
+    }
+
+    for (int k = 0; k < iterations; ++k) {
+        // Elevamos a potencia
+        C = A * C;
+
+        // Normalizamos el vector
+        double length = norm(C);
+
+        for (int i = 0; i < A.columns(); ++i) {
+            C[i] /= length;
+        }
+    }
+
+    return std::pair<double, std::vector<double>>(norm(C), C);
 }

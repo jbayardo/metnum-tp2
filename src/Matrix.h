@@ -63,5 +63,4 @@ Matrix operator+(const Matrix &m, const Matrix &n);
 Matrix operator*(const Matrix &m, const unsigned char &c);
 Matrix operator*(const Matrix &m, const Matrix &n);
 
-
 #endif //TP2_MATRIX_H
