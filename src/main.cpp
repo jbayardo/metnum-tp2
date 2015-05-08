@@ -260,17 +260,24 @@ std::pair<double, std::vector<double>> powerIteration(const Matrix &A, const std
         C[i] = x[i];
     }
 
+    double eigenValue = 0.0;
+
+    // reutilizamos la norma calculada en el paso anterior.
+    double lastNorm = norm(C);
+
     for (int k = 0; k < iterations; ++k) {
         // Elevamos a potencia
         C = A * C;
 
         // Normalizamos el vector
-        double length = norm(C);
-
+        double length = norm(C);        
         for (int i = 0; i < A.columns(); ++i) {
             C[i] /= length;
         }
+
+        eigenValue = length/lastNorm;
+        lastNorm = length;
     }
 
-    return std::pair<double, std::vector<double>>(norm(C), C);
+    return std::pair<double, std::vector<double>>(eigenValue, C);
 }
