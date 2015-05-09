@@ -3,21 +3,53 @@
 //
 
 #include <vector>
-#include <functional>
 #include <bitset>
 #include <fstream>
-#include <queue>
-#include <cmath>
-#include "Problem.h"
-#include "Matrix.h"
+#include "LinearAlgebra.h"
 
 #define DIM 28
 #define TRAIN_SIZE 42000
 #define TEST_SIZE 28000
 
-typedef unsigned char Label;
+typedef double Label;
 
-void loadTrainingSet(std::string path, Matrix &trainingSet, Label *trainingLabels) {
+typedef enum {
+    KNN,
+    PCA_KNN
+} SolutionMethod;
+
+/*
+ * Devuelve un número del 0 al 9 que representa el dígito reconocido
+ */
+Label kNN(int k, const Matrix &trainingSet, const std::vector<Label> &trainingLabels, const std::vector<double> &vector, const DistanceF &f) {
+    min_queue<std::pair<double, Label>> distances;
+
+    for (int i = 0; i < trainingSet.rows(); ++i) {
+        distances.push(std::pair<double, Label>(f(trainingSet, vector, i), trainingLabels[i]));
+    }
+
+    int i = 0;
+    int labels[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+    while (!distances.empty() && i < k) {
+        // TODO: ajustar
+        labels[(int)distances.top().second]++;
+        distances.pop();
+        ++i;
+    }
+
+    int maximum = 0;
+
+    for (int j = 0; j < 10; ++j) {
+        if (labels[j] > maximum) {
+            maximum = j;
+        }
+    }
+
+    return maximum;
+}
+
+void loadTrainingSet(std::string path, Matrix &trainingSet, std::vector<Label> trainingLabels) {
     std::fstream train(path + "train.csv", std::ios_base::in);
     std::cout << "Levantando training set" << std::endl;
     // Obtenemos el header, así después el algorítmo sólo levanta los datos.
@@ -73,13 +105,13 @@ void loadTrainingSet(std::string path, Matrix &trainingSet, Label *trainingLabel
     if (train.bad()) {
         std::cerr << "Error de lectura en el archivo de training." << std::endl;
         train.close();
-        throw std::string("Pito"); // TODO:
+        throw new std::string("Pito"); // TODO:
     }
 
     train.close();
 }
 
-void loadTestingSet(std::string path, Matrix &testingSet, Label *testingLabels) {
+void loadTestingSet(std::string path, Matrix &testingSet, std::vector<Label> testingLabels) {
     std::fstream test(path + "test.csv", std::ios_base::in);
     std::cout << "Levantando testing set" << std::endl;
     // Obtenemos el header, así después el algorítmo sólo levanta los datos.
@@ -123,6 +155,29 @@ void loadTestingSet(std::string path, Matrix &testingSet, Label *testingLabels) 
     test.close();
 }
 
+template <int K>
+std::pair<Matrix, std::vector<Label>> filterDataset(const Matrix &A, const std::vector<Label> &labels, const std::bitset<K> &filter) {
+    if (K < labels.size()) {
+        throw new std::string("Invalid filter for dataset");
+    }
+
+    std::vector<Label> output(filter.count());
+    int last = 0;
+
+    for (int i = 0; i < A.rows(); ++i) {
+        if (filter[i]) {
+            output[last] = labels[i];
+            last++;
+        }
+
+        if (last > filter.count()) {
+            break;
+        }
+    }
+
+    return std::pair<Matrix, std::vector<Label>>(Matrix(A, filter), output);
+}
+
 int main(int argc, char *argv[]) {
     SolutionMethod method = SolutionMethod::KNN;
 
@@ -144,140 +199,59 @@ int main(int argc, char *argv[]) {
 
     // Levantamos las mascaras para definir el training set y el test set
     std::cout << "Levantando mascaras para el dataset" << std::endl;
-    std::bitset<TRAIN_SIZE> *masks = new std::bitset<TRAIN_SIZE>[tests]();
+    std::vector<std::bitset<TRAIN_SIZE>> masks(tests);
 
     for (int i = 0; i < tests; ++i) {
         input >> masks[i];
+
+        // Si el test esta al pedo, nos lo salteamos
+        if (masks[i].count() == masks[i].size() || masks[i].count() == 0) {
+            --i;
+            --tests;
+        }
     }
 
     input.close();
 
     Matrix trainingSet = Matrix(TRAIN_SIZE, DIM*DIM);
-    Label *trainingLabels = new Label[TRAIN_SIZE];
+    std::vector<Label> trainingLabels(TRAIN_SIZE);
     loadTrainingSet(path, trainingSet, trainingLabels);
 
     Matrix testingSet = Matrix(TEST_SIZE, DIM*DIM);
-    Label *testingLabels = new Label[TEST_SIZE];
-    loadTestingSet(path, testingSet, trainingLabels);
+    std::vector<Label> testingLabels(TEST_SIZE);
+    loadTestingSet(path, testingSet, testingLabels);
 
+    for (int k = 0; k < tests; ++k) {
+        std::pair<Matrix, std::vector<Label>> fTrain = filterDataset(trainingSet, trainingLabels, masks[k]);
+        masks[k].flip();
+        std::pair<Matrix, std::vector<Label>> fTest = filterDataset(trainingSet, trainingLabels, masks[k]);
+        masks[k].flip();
+
+        switch (method) {
+            case PCA_KNN:
+
+                break;
+            default:
+                for (int i = 0; i < fTest.first.rows(); ++i) {
+                    Label l = kNN(neighbours, fTrain.first, fTrain.second, fTest.first, L2);
+
+                    // TODO: contar...
+                }
+                break;
+        }
+    }
+
+    switch (method) {
+        case PCA_KNN:
+            // TODO: procesar
+            break;
+    }
+
+    for (int i = 0; i < testingSet.rows(); ++i) {
+        Label l = kNN(neighbours, trainingSet, trainingLabels, trainingSet[i], L2);
+
+        // TODO: contar
+    }
 
     return 0;
-}
-
-template <typename T>
-using min_queue = std::priority_queue<T, std::vector<T>, std::greater<T>>;
-
-// Matriz de datos, vector, número de línea.
-typedef std::function<double(const Matrix &, const std::vector<double> &, int)> DistanceF;
-
-const DistanceF L2 = DistanceF([](const Matrix &A, const std::vector<double> &v, int i) -> double {
-    if (v.size() < A.columns()) {
-        throw new std::out_of_range("Invalid size for vector");
-    }
-
-    double output = 0.0;
-
-    for (int j = 0; j < A.columns(); ++j) {
-        output += (static_cast<double>(A(i, j)) - v[i]) * (static_cast<double>(A(i, j)) - v[i]);
-    }
-
-    return std::sqrt(output);
-});
-
-/*
- * Devuelve un número del 0 al 9 que representa el dígito reconocido
- */
-Label kNN(int k, const Matrix &trainingSet, Label *trainingLabels, const std::vector<double> &vector, const DistanceF &f) {
-    min_queue<std::pair<double, Label>> distances;
-
-    for (int i = 0; i < trainingSet.rows(); ++i) {
-        distances.push(std::pair<double, Label>(f(trainingSet, vector, i), trainingLabels[i]));
-    }
-
-    int i = 0;
-    int labels[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-    while (!distances.empty() && i < k) {
-        labels[distances.top().second]++;
-        distances.pop();
-        ++i;
-    }
-
-    Label maximum = 0;
-
-    for (Label j = 0; j < 10; ++j) {
-        if (labels[j] > maximum) {
-            maximum = j;
-        }
-    }
-
-    return maximum;
-}
-
-typedef std::function<double(const std::vector<double> &v)> Norm;
-
-const Norm N2 = Norm([](const std::vector<double> &v) -> double {
-    double output = 0.0;
-
-    for (int i = 0; i < v.size(); ++i) {
-        output += i*i;
-    }
-
-    return std::sqrt(output);
-});
-
-std::vector<double> operator*(const Matrix &m, const std::vector<double> &n) {
-    if (n.size() < m.columns()) {
-        throw new std::out_of_range("Invalid vector size for matrix product");
-    }
-
-    std::vector<double> output = std::vector<double>();
-
-    for (int i = 0; i < m.rows(); ++i) {
-        double tmp = 0.0;
-
-        for (int j = 0; j < m.columns(); ++j) {
-            tmp += m(i, j) * n[j];
-        }
-
-        output[i] = tmp;
-    }
-
-    return output;
-}
-
-/*
- * Obtiene el autovalor dominante en módulo de una matriz.
- *
- * @param A matriz para buscar autoespacios
- * @param x vector inicial del algoritmo
- */
-std::pair<double, std::vector<double>> powerIteration(const Matrix &A, const std::vector<double> &x, const Norm &norm, unsigned int iterations = 100) {
-    std::vector<double> C(A.columns());
-
-    // Copiamos el vector hasta la coordenada que vamos a usar
-    for (int i = 0; i < A.columns(); ++i) {
-        C[i] = x[i];
-    }
-
-    double eigenValue = 0.0;
-
-    // reutilizamos la norma calculada en el paso anterior.
-    double lastNorm = norm(C);
-
-    for (int k = 0; k < iterations; ++k) {
-        // Elevamos a potencia
-        C = A * C;
-
-        // Normalizamos el vector
-        double length = norm(C);        
-        for (int i = 0; i < A.columns(); ++i) {
-            C[i] /= length;
-        }
-
-        eigenValue = length/lastNorm;
-        lastNorm = length;
-    }
-
-    return std::pair<double, std::vector<double>>(eigenValue, C);
 }

@@ -5,15 +5,15 @@
 #include "Matrix.h"
 #include <stdexcept>
 
-const unsigned char zero = 0;
+const double zero = 0;
 
 // TODO: revisar las bandas y como se settean en los constructores
 Matrix::Matrix(const Matrix &m) : N(m.rows()), M(m.columns()), uband(m.upper_bandwidth()), lband(m.lower_bandwidth()) {
     int bound = this->lower_bandwidth() + this->upper_bandwidth() + 1;
-    this->matrix = new unsigned char*[this->rows()];
+    this->matrix = new double*[this->rows()];
 
     for (int i = 0; i < this->rows(); ++i) {
-        this->matrix[i] = new unsigned char[bound];
+        this->matrix[i] = new double[bound];
 
         for (int j = 0; j < bound; ++j) {
             this->matrix[i][j] = m.matrix[i][j];
@@ -24,13 +24,17 @@ Matrix::Matrix(const Matrix &m) : N(m.rows()), M(m.columns()), uband(m.upper_ban
 template <int K>
 Matrix::Matrix(const Matrix &m, const std::bitset<K> &filter)
         : N((int)filter.count()), M(m.columns()), uband(m.upper_bandwidth()), lband(std::min(m.lower_bandwidth(), N)) {
+    if (K != this->rows()) {
+        throw new std::out_of_range("Invalid filter for bitset");
+    }
+
     int last = 0;
     int bound = this->lower_bandwidth() + this->upper_bandwidth() + 1;
-    this->matrix = new unsigned char*[this->rows()];
+    this->matrix = new double*[this->rows()];
 
     for (int i = 0; i < m.rows(); ++i) {
         if (filter.test((std::size_t)i)) {
-            this->matrix[last] = new unsigned char[bound];
+            this->matrix[last] = new double[bound];
 
             for (int j = 0; j < bound; ++j) {
                 (*this)(last, j) = m(i, j);
@@ -56,10 +60,10 @@ Matrix::Matrix(int N, int M, int lband, int uband)
     }
 
     int bound = this->lower_bandwidth() + this->upper_bandwidth() + 1;
-    this->matrix = new unsigned char*[this->rows()];
+    this->matrix = new double*[this->rows()];
 
     for (int i = 0; i < this->rows(); ++i) {
-        this->matrix[i] = new unsigned char[bound];
+        this->matrix[i] = new double[bound];
 
         for (int j = 0; j < bound; ++j) {
             this->matrix[i][j] = 0;
@@ -67,7 +71,7 @@ Matrix::Matrix(int N, int M, int lband, int uband)
     }
 }
 
-unsigned char &Matrix::operator()(const int &i, const int &j) {
+double &Matrix::operator()(const int &i, const int &j) {
     if (i >= this->rows() || j >= this->columns()) {
         throw new std::out_of_range("Index access out of range");
     }
@@ -79,7 +83,7 @@ unsigned char &Matrix::operator()(const int &i, const int &j) {
     }
 }
 
-const unsigned char &Matrix::operator()(const int &i, const int &j) const {
+const double &Matrix::operator()(const int &i, const int &j) const {
     if (i >= this->rows() || j >= this->columns()) {
         throw new std::out_of_range("Index access out of range");
     }
@@ -110,10 +114,10 @@ Matrix &Matrix::operator=(const Matrix &m) {
 
         // Crear matriz nueva
         int bound = this->lower_bandwidth() + this->upper_bandwidth() + 1;
-        this->matrix = new unsigned char*[m.rows()];
+        this->matrix = new double*[m.rows()];
 
         for (int i = 0; i < this->rows(); ++i) {
-            this->matrix[i] = new unsigned char[bound];
+            this->matrix[i] = new double[bound];
 
             for (int j = 0; j < bound; ++j) {
                 // Copiar los valores de la matriz
@@ -165,10 +169,10 @@ Matrix &Matrix::operator+=(const Matrix &m) {
             int new_bound = new_lband + new_uband + 1;
 
             // Creamos una nueva matriz que guarda directamente la suma
-            unsigned char **output = new unsigned char*[this->rows()];
+            double **output = new double*[this->rows()];
 
             for (int i = 0; i < this->rows(); ++i) {
-                output[i] = new unsigned char[new_bound];
+                output[i] = new double[new_bound];
 
                 for (int j = 0; j < new_bound; ++j) {
                     output[i][j] = this->matrix[i][j + i - this->lower_bandwidth()] + m.matrix[i][j + i - m.lower_bandwidth()];
@@ -197,7 +201,7 @@ Matrix &Matrix::operator+=(const Matrix &m) {
     return *this;
 }
 
-Matrix &Matrix::operator*=(const unsigned char &c) {
+Matrix &Matrix::operator*=(const double &c) {
     int bound = this->lower_bandwidth() + this->upper_bandwidth() + 1;
 
     for (int i = 0; i < this->rows(); ++i) {
@@ -220,7 +224,7 @@ Matrix::~Matrix() {
 std::ostream &operator<<(std::ostream &os, const Matrix &m) {
     for (int i = 0; i < m.rows(); ++i) {
         for (int j = 0; j < m.columns(); ++j) {
-            os << (int)m(i, j) << " ";
+            os << (double)m(i, j) << " ";
         }
 
         os << std::endl;
@@ -237,7 +241,7 @@ Matrix operator+(const Matrix &m, const Matrix &n) {
     return output;
 }
 
-Matrix operator*(const Matrix &m, const unsigned char &c) {
+Matrix operator*(const Matrix &m, const double &c) {
     Matrix output(m);
     output *= c;
     return output;
