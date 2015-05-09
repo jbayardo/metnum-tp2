@@ -34,7 +34,7 @@ std::vector<double> operator*(const Matrix &m, const std::vector<double> &n) {
  */
 EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const Norm &norm, const ConditionF &condition) {
     // Nos aseguramos que el vector tenga solo las coordenadas que vamos a usar
-    eigenVector.resize(A.columns());
+    eigenVector.resize((unsigned long) A.columns());
 
     double eigenValue = 0.0;
     int iteration = 0;
@@ -71,16 +71,12 @@ EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const
  * @param eigen par de autovalor y autovector
  * @return nueva matriz con las caracteristicas anunciadas
  */
-Matrix deflation(const Matrix &A, const EigenPair &eigen) {
-    Matrix output(A);
-
+void deflation(Matrix &A, const EigenPair &eigen) {
     for (int i = 0; i < A.rows(); ++i) {
         for (int j = 0; j < A.columns(); ++j) {
-            output(i, j) -= eigen.first * eigen.second[i] * eigen.second[j];
+            A(i, j) -= eigen.first * eigen.second[i] * eigen.second[j];
         }
     }
-
-    return A;
 }
 
 /**
@@ -90,23 +86,22 @@ Matrix deflation(const Matrix &A, const EigenPair &eigen) {
  * @param k cantidad de autovectores/autovalores a obtener
  * @ret lista ordenada por dominancia decreciente del autopar
  */
-std::list<EigenPair> decompose(const Matrix &A, int k, const Norm &norm, const ConditionF &condition) {
-    if (k >= A.columns()) {
+std::list<EigenPair> decompose(Matrix deflated, int k, const Norm &norm, const ConditionF &condition) {
+    if (k >= deflated.columns()) {
         throw new std::out_of_range("Too many eigenpairs to obtain");
     }
 
-    Matrix deflated(A);
-    std::list<EigenPair> output = std::list<EigenPair>();
+    std::list<EigenPair> output;
 
     // Vector inicial para esta iteracion
-    std::vector<double> x0(A.columns(), 1.0);
+    std::vector<double> x0((unsigned long) deflated.columns(), 1.0);
 
     for (int i = 0; i < k; ++i) {
         // Obtenemos el i-esimo eigenpair dominante
         EigenPair dominant = powerIteration(deflated, x0, norm, condition);
 
         // Hacemos deflacion, para el proximo paso
-        deflated = deflation(deflated, dominant);
+        deflation(deflated, dominant);
 
         // Lo guardamos al final de la lista
         output.push_back(dominant);

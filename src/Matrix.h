@@ -19,8 +19,29 @@ class Matrix {
 public:
     Matrix(const Matrix &m);
 
-    template <int K>
-    Matrix(const Matrix &m, const std::bitset<K> &filter);
+    template <std::size_t K>
+    Matrix(const Matrix &m, const std::bitset<K> &filter)
+            : N((int)filter.count()), M(m.columns()), uband(m.upper_bandwidth()), lband(std::min(m.lower_bandwidth(), N)) {
+        if (K != this->rows()) {
+            throw new std::out_of_range("Invalid filter for bitset");
+        }
+
+        int last = 0;
+        int bound = this->lower_bandwidth() + this->upper_bandwidth() + 1;
+        this->matrix = new double*[this->rows()];
+
+        for (int i = 0; i < m.rows(); ++i) {
+            if (filter.test((std::size_t)i)) {
+                this->matrix[last] = new double[bound];
+
+                for (int j = 0; j < bound; ++j) {
+                    (*this)(last, j) = m(i, j);
+                }
+
+                last++;
+            }
+        }
+    }
 
     Matrix(int N, int M, int lband = MAGIC_NUMBER, int uband = MAGIC_NUMBER);
 

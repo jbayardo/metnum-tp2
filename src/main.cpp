@@ -21,18 +21,18 @@ typedef enum {
 /*
  * Devuelve un número del 0 al 9 que representa el dígito reconocido
  */
-Label kNN(int k, const Matrix &trainingSet, const std::vector<Label> &trainingLabels, const std::vector<double> &vector, const DistanceF &f) {
+Label kNN(int k, const Matrix &trainingSet, const std::vector<Label> &trainingLabels, Matrix &evSet, int i1, const DistanceF &f) {
     min_queue<std::pair<double, Label>> distances;
 
     for (int i = 0; i < trainingSet.rows(); ++i) {
-        distances.push(std::pair<double, Label>(f(trainingSet, vector, i), trainingLabels[i]));
+        distances.push(std::pair<double, Label>(f(trainingSet, i, evSet, i1), trainingLabels[i]));
     }
 
+    // TODO: considerar posibilidades de clasificacion.
     int i = 0;
     int labels[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     while (!distances.empty() && i < k) {
-        // TODO: ajustar
         labels[(int)distances.top().second]++;
         distances.pop();
         ++i;
@@ -49,7 +49,7 @@ Label kNN(int k, const Matrix &trainingSet, const std::vector<Label> &trainingLa
     return maximum;
 }
 
-void loadTrainingSet(std::string path, Matrix &trainingSet, std::vector<Label> trainingLabels) {
+void loadTrainingSet(std::string path, Matrix &trainingSet, std::vector<Label> &trainingLabels) {
     std::fstream train(path + "train.csv", std::ios_base::in);
     std::cout << "Levantando training set" << std::endl;
     // Obtenemos el header, así después el algorítmo sólo levanta los datos.
@@ -91,7 +91,7 @@ void loadTrainingSet(std::string path, Matrix &trainingSet, std::vector<Label> t
             if (cur != std::string::npos) {
                 std::string current = line.substr(prev + 1, cur);
                 // Levantamos el string como un char
-                Label out = (Label) std::stoi(current);
+                Label out = (double)std::stoi(current);
                 trainingSet(l, i) = out;
             }
 
@@ -111,7 +111,7 @@ void loadTrainingSet(std::string path, Matrix &trainingSet, std::vector<Label> t
     train.close();
 }
 
-void loadTestingSet(std::string path, Matrix &testingSet, std::vector<Label> testingLabels) {
+void loadTestingSet(std::string path, Matrix &testingSet) {
     std::fstream test(path + "test.csv", std::ios_base::in);
     std::cout << "Levantando testing set" << std::endl;
     // Obtenemos el header, así después el algorítmo sólo levanta los datos.
@@ -123,9 +123,9 @@ void loadTestingSet(std::string path, Matrix &testingSet, std::vector<Label> tes
 
     // Levantamos una linea del csv y la separamos por coma
     while (getline(test,line) && !test.eof() && !test.bad()) {
-        // Buscamos cuál es el Label
+        // Buscamos cuál es el primer pixel
         std::string::size_type prev = line.find_first_of(',');
-        testingSet(l, 0) = (Label) std::stoi(line.substr(0, prev));
+        testingSet(l, 0) = (double)std::stoi(line.substr(0, prev));
 
         // Este contador es el número de pixel que estamos procesando en la imagen
         int i = 1;
@@ -135,8 +135,8 @@ void loadTestingSet(std::string path, Matrix &testingSet, std::vector<Label> tes
             std::string::size_type cur = line.find_first_of(',', prev + 1);
 
             if (cur != std::string::npos) {
-                // Levantamos el string como un char
-                testingSet(l, i) = (Label) std::stoi(line.substr(prev + 1, cur));
+                // Levantamos el string como un double
+                testingSet(l, i) = (double) std::stoi(line.substr(prev + 1, cur));
             }
 
             prev = cur;
@@ -155,7 +155,7 @@ void loadTestingSet(std::string path, Matrix &testingSet, std::vector<Label> tes
     test.close();
 }
 
-template <int K>
+template <std::size_t K>
 std::pair<Matrix, std::vector<Label>> filterDataset(const Matrix &A, const std::vector<Label> &labels, const std::bitset<K> &filter) {
     if (K < labels.size()) {
         throw new std::string("Invalid filter for dataset");
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
 
     // Levantamos las mascaras para definir el training set y el test set
     std::cout << "Levantando mascaras para el dataset" << std::endl;
-    std::vector<std::bitset<TRAIN_SIZE>> masks(tests);
+    std::vector<std::bitset<TRAIN_SIZE>> masks((unsigned long) tests);
 
     for (int i = 0; i < tests; ++i) {
         input >> masks[i];
@@ -218,40 +218,54 @@ int main(int argc, char *argv[]) {
     loadTrainingSet(path, trainingSet, trainingLabels);
 
     Matrix testingSet = Matrix(TEST_SIZE, DIM*DIM);
-    std::vector<Label> testingLabels(TEST_SIZE);
-    loadTestingSet(path, testingSet, testingLabels);
+    loadTestingSet(path, testingSet);
 
-    for (int k = 0; k < tests; ++k) {
-        std::pair<Matrix, std::vector<Label>> fTrain = filterDataset(trainingSet, trainingLabels, masks[k]);
-        masks[k].flip();
-        std::pair<Matrix, std::vector<Label>> fTest = filterDataset(trainingSet, trainingLabels, masks[k]);
-        masks[k].flip();
-
-        switch (method) {
-            case PCA_KNN:
-
-                break;
-            default:
-                for (int i = 0; i < fTest.first.rows(); ++i) {
-                    Label l = kNN(neighbours, fTrain.first, fTrain.second, fTest.first, L2);
-
-                    // TODO: contar...
-                }
-                break;
-        }
-    }
+    std::vector<Label> predictions;
 
     switch (method) {
         case PCA_KNN:
-            // TODO: procesar
+        default:
+            for (int k = 0; k < tests; ++k) {
+                std::pair<Matrix, std::vector<Label>> fTrain = filterDataset(trainingSet, trainingLabels, masks[k]);
+                masks[k].flip();
+                std::pair<Matrix, std::vector<Label>> fTest = filterDataset(trainingSet, trainingLabels, masks[k]);
+                masks[k].flip();
+                unsigned int hit = 0;
+                unsigned int miss = 0;
+
+                for (int i = 0; i < fTest.first.rows(); ++i) {
+                    Label l = kNN(neighbours, fTrain.first, fTrain.second, fTest.first, i, L2);
+
+                    if (l == fTest.second[i]) {
+                        ++hit;
+                    } else {
+                        ++miss;
+                    }
+                }
+
+                // TODO: cuentitas.
+            }
+
+            for (int i = 0; i < testingSet.rows(); ++i) {
+                Label l = kNN(neighbours, trainingSet, trainingLabels, testingSet, i, L2);
+
+                predictions[i] = l;
+            }
+
             break;
     }
 
-    for (int i = 0; i < testingSet.rows(); ++i) {
-        Label l = kNN(neighbours, trainingSet, trainingLabels, trainingSet[i], L2);
+    // TODO: output csv
 
-        // TODO: contar
+
+    std::fstream output(std::string(argv[2]) + ".csv", std::ios_base::out);
+    output << "ImageId,Label" << std::endl;
+
+    for (int i = 0; i < predictions.size(); ++i) {
+        output << i << "," << predictions[i] << std::endl;
     }
+
+    output.close();
 
     return 0;
 }

@@ -2,8 +2,8 @@
 // Created by Julian Bayardo on 4/25/15.
 //
 
-#include "Matrix.h"
 #include <stdexcept>
+#include "Matrix.h"
 
 const double zero = 0;
 
@@ -17,30 +17,6 @@ Matrix::Matrix(const Matrix &m) : N(m.rows()), M(m.columns()), uband(m.upper_ban
 
         for (int j = 0; j < bound; ++j) {
             this->matrix[i][j] = m.matrix[i][j];
-        }
-    }
-}
-
-template <int K>
-Matrix::Matrix(const Matrix &m, const std::bitset<K> &filter)
-        : N((int)filter.count()), M(m.columns()), uband(m.upper_bandwidth()), lband(std::min(m.lower_bandwidth(), N)) {
-    if (K != this->rows()) {
-        throw new std::out_of_range("Invalid filter for bitset");
-    }
-
-    int last = 0;
-    int bound = this->lower_bandwidth() + this->upper_bandwidth() + 1;
-    this->matrix = new double*[this->rows()];
-
-    for (int i = 0; i < m.rows(); ++i) {
-        if (filter.test((std::size_t)i)) {
-            this->matrix[last] = new double[bound];
-
-            for (int j = 0; j < bound; ++j) {
-                (*this)(last, j) = m(i, j);
-            }
-
-            last++;
         }
     }
 }
