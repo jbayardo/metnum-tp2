@@ -11,6 +11,7 @@
 #include <functional>
 #include <list>
 #include <numeric>
+#include <algorithm>
 #include "Matrix.h"
 
 template <typename T>
@@ -23,8 +24,9 @@ typedef std::pair<double, std::vector<double>> EigenPair;
 
 std::vector<double> operator*(const Matrix &m, const std::vector<double> &n);
 EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const Norm &norm, const ConditionF &condition);
-Matrix deflation(const Matrix &A, const EigenPair &eigen);
+void deflation(const Matrix &A, const EigenPair &eigen);
 std::list<EigenPair> decompose(const Matrix &A, int k, const Norm &norm, const ConditionF &condition);
+void dimensionReduction(const Matrix& src, Matrix& dst, const std::list<EigenPair>& l);
 
 const DistanceF L2 = DistanceF([](const Matrix &A, int i0, const Matrix &B, int i1) -> double {
     if (B.columns() != A.columns()) {

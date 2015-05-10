@@ -178,6 +178,7 @@ std::pair<Matrix, std::vector<Label>> filterDataset(const Matrix &A, const std::
     return std::pair<Matrix, std::vector<Label>>(Matrix(A, filter), output);
 }
 
+
 int main(int argc, char *argv[]) {
     SolutionMethod method = SolutionMethod::KNN;
 
@@ -224,52 +225,84 @@ int main(int argc, char *argv[]) {
 
     switch (method) {
         case PCA_KNN:
-            /*for (int k = 0; k < tests; ++k) {
-                std::pair<Matrix, std::vector<Label>> fTrain = filterDataset(trainingSet, trainingLabels, masks[k]);
-                masks[k].flip();
-                std::pair<Matrix, std::vector<Label>> fTest = filterDataset(trainingSet, trainingLabels, masks[k]);
-                masks[k].flip();
-                unsigned int hit = 0;
-                unsigned int miss = 0;
+            {
+                // TODO: CROSS VALIDATION 
 
-                for (int i = 0; i < fTest.first.rows(); ++i) {
-                    Label l = kNN(neighbours, fTrain.first, fTrain.second, fTest.first, i, L2);
+                // Las direcciones en las que hay mayor dispersión de datos son los autovectores de la matriz de covarianza.
+                // Estos autovectores forman una base ortonormal.
+                // Vamos a obtenerlos (cierta cantidad) y luego realizar cambio de base, para realizar KNN en menos dimensiones.
 
-                    if (l == fTest.second[i]) {
-                        ++hit;
-                    } else {
-                        ++miss;
+                // Debemos armar la matriz de covarianza, de las imagenes de training test.
+
+                // primero debemos calcular el promedio de nuestras imagenes.
+                // lo definimos como una fila.
+                Matrix mean(1, DIM*DIM);
+                // VERIFICAR!!! LA PRIMERA FILA ES LA 0 ?
+
+                // TODO: Seria util que la propia matriz tenga una funcion que te de el vector promedio. La sumatoria la va generando cada vez que se cambian las filas.
+                for (int i = 0; i < trainingSet.rows(); i++)
+                    for (int j = 0; j < trainingSet.columns(); j++)
+                        mean(0,j) = mean(0,j) + trainingSet(i,j)/TRAIN_SIZE;
+
+                // Debemos generar en la matriz de training lo siguiente en cada fila:
+                // x_i debe ser (x_i - mean)_traspuesto / (sqrt(n-1))
+                // para nuestro caso ya estan traspuestas.
+                for (int i = 0; i < trainingSet.rows(); i++)
+                {
+                    for (int j = 0; j < trainingSet.columns(); j++)
+                    {
+                       trainingSet(i,j) -= mean(0, j);
+                       trainingSet(i,j) /= sqrt(TRAIN_SIZE-1);
                     }
                 }
 
-                // TODO: cuentitas.
-            }*/
-
-            // Hacemos el producto de A con A^T
-            Matrix square(trainingSet.rows(), trainingSet.rows());
-
-            for (int i = 0; i < square.rows(); ++i) {
-                for (int j = 0; j < square.rows(); ++j) {
-                    for (int k = 0; k < square.columns(); ++k) {
-                        square(i, j) += trainingSet(i, k) * trainingSet(j, k);
+                Matrix covariance(TRAIN_SIZE, TRAIN_SIZE);
+                for (int j = 0; j < TRAIN_SIZE; j++)
+                {
+                    for (int i = 0; i < TRAIN_SIZE; i++)
+                    {  
+                        // j es la columna de X_t, que resulta ser la fila j-esima de X
+                        for (int k = 0; k < DIM*DIM; k++)
+                            covariance(j,i) += trainingSet(k,j) * trainingSet(k,i);
                     }
                 }
+
+                // la matriz covariance es simetrica
+                // no nos importa buscar los autovalores, solo los autovectores.
+
+                // FIX: No puedo llamarla bien, ni con funciones placeholders.
+                //std::list<EigenPair> eigenPair = decompose(covariance, alpha, , );
+                std::list<EigenPair> eigenPair; // ASIGNARLES VALORES!
+                // asumimos que aca tenemos los autovectores y autovalores
+
+
+                Matrix trainChangeBasis(TRAIN_SIZE, alpha);
+                // En este paso vamos a realizar un cambio de espacio a todos los vectores
+                dimensionReduction(trainingSet, trainChangeBasis, eigenPair);
+
+                // a cada imagen del testing set debemos restarle mean y dividirlos por sqrt(TRAIN_SIZE-1)
+                // segun diapositivas de la clase.
+
+                for (int i = 0; i < testingSet.rows(); i++)
+                {
+                    for (int j = 0; j < testingSet.columns(); j++)
+                    {
+                        testingSet(i,j) -= mean(0, j);
+                        testingSet(i,j) /= sqrt(TRAIN_SIZE-1);
+                    }
+                }
+
+                Matrix testChangeBasis(TEST_SIZE, alpha);
+                dimensionReduction(testingSet, testChangeBasis, eigenPair);
+                
+                // ya tenemos los vectores en sus respectivos cambios de bases
+                for (int i = 0; i < testChangeBasis.rows(); ++i) {
+                    Label l = kNN(neighbours, trainChangeBasis, trainingLabels, testChangeBasis, i, L2);
+                    predictions[i] = l;
+                }
+                break;
             }
-
-            // Tomamos la descomposición
-            // falta definir C1
-            std::list<EigenPair>pairs = decompose(square, alpha, N2, C1);
-
-            // TODO: procesar square
-            // TODO: procesar el testing set. Guardar las multiplicaciones
-
-            for (int i = 0; i < testingSet.rows(); ++i) {
-                Label l = kNN(neighbours, square, trainingLabels, testingSet, i, L2);
-                predictions[i] = l;
-            }
-
-            break;
-        default:
+        case KNN:
             for (int k = 0; k < tests; ++k) {
                 std::pair<Matrix, std::vector<Label>> fTrain = filterDataset(trainingSet, trainingLabels, masks[k]);
                 masks[k].flip();

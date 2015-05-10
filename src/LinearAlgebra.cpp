@@ -109,3 +109,35 @@ std::list<EigenPair> decompose(Matrix deflated, int k, const Norm &norm, const C
 
     return output;
 }
+
+/**
+ * Realiza un cambio de base a las filas de src, guardandolas en dst y utlizando los autovectores indicados.
+ *
+ * @param src matriz con imagenes
+ * @param dst matriz destino
+ * @param l lista de EigenPair
+ */
+
+void dimensionReduction(const Matrix& src, Matrix& dst, const std::list<EigenPair>& l)
+{
+    // contador de EigenPair
+    int c = 0.0;
+    // ASUMO QUE LO RECORRE EN ORDEN!
+    for (const EigenPair& ep : l)
+    {
+        const std::vector<double>& eigenVector = ep.second;
+
+        // 
+        for (int i = 0; i < src.rows(); i++)
+        {   
+            double sum = 0.0;
+            for (int j = 0; j < src.columns(); j++)
+                sum += eigenVector[j] * src(i,j);
+
+            // los guardamos en fila, asi reutilizamos otros metodos.
+            dst(i,c) = sum;
+        }
+
+        c++;
+    }
+}
