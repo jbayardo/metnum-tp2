@@ -224,6 +224,51 @@ int main(int argc, char *argv[]) {
 
     switch (method) {
         case PCA_KNN:
+            /*for (int k = 0; k < tests; ++k) {
+                std::pair<Matrix, std::vector<Label>> fTrain = filterDataset(trainingSet, trainingLabels, masks[k]);
+                masks[k].flip();
+                std::pair<Matrix, std::vector<Label>> fTest = filterDataset(trainingSet, trainingLabels, masks[k]);
+                masks[k].flip();
+                unsigned int hit = 0;
+                unsigned int miss = 0;
+
+                for (int i = 0; i < fTest.first.rows(); ++i) {
+                    Label l = kNN(neighbours, fTrain.first, fTrain.second, fTest.first, i, L2);
+
+                    if (l == fTest.second[i]) {
+                        ++hit;
+                    } else {
+                        ++miss;
+                    }
+                }
+
+                // TODO: cuentitas.
+            }*/
+
+            // Hacemos el producto de A con A^T
+            Matrix square(trainingSet.rows(), trainingSet.rows());
+
+            for (int i = 0; i < square.rows(); ++i) {
+                for (int j = 0; j < square.rows(); ++j) {
+                    for (int k = 0; k < square.columns(); ++k) {
+                        square(i, j) += trainingSet(i, k) * trainingSet(j, k);
+                    }
+                }
+            }
+
+            // Tomamos la descomposición
+            // falta definir C1
+            std::list<EigenPair>pairs = decompose(square, alpha, N2, C1);
+
+            // TODO: procesar square
+            // TODO: procesar el testing set. Guardar las multiplicaciones
+
+            for (int i = 0; i < testingSet.rows(); ++i) {
+                Label l = kNN(neighbours, square, trainingLabels, testingSet, i, L2);
+                predictions[i] = l;
+            }
+
+            break;
         default:
             for (int k = 0; k < tests; ++k) {
                 std::pair<Matrix, std::vector<Label>> fTrain = filterDataset(trainingSet, trainingLabels, masks[k]);
@@ -248,7 +293,6 @@ int main(int argc, char *argv[]) {
 
             for (int i = 0; i < testingSet.rows(); ++i) {
                 Label l = kNN(neighbours, trainingSet, trainingLabels, testingSet, i, L2);
-
                 predictions[i] = l;
             }
 
