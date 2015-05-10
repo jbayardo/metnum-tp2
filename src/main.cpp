@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
         case PCA_KNN:
             {
                 // TODO: CROSS VALIDATION 
-                
+
                 // Las direcciones en las que hay mayor dispersión de datos son los autovectores de la matriz de covarianza.
                 // Estos autovectores forman una base ortonormal.
                 // Vamos a obtenerlos (cierta cantidad) y luego realizar cambio de base, para realizar KNN en menos dimensiones.
@@ -288,7 +288,7 @@ int main(int argc, char *argv[]) {
                     for (int j = 0; j < testingSet.columns(); j++)
                     {
                         testingSet(i,j) -= mean(0, j);
-                        testingSet(i,j) /= sqrt(TEST_SIZE-1);
+                        testingSet(i,j) /= sqrt(TRAIN_SIZE-1);
                     }
                 }
 
