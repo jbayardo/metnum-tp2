@@ -121,7 +121,7 @@ std::list<EigenPair> decompose(Matrix deflated, int k, const Norm &norm, const C
 void dimensionReduction(const Matrix& src, Matrix& dst, const std::list<EigenPair>& l)
 {
     // contador de EigenPair
-    int c = 0.0;
+    int c = 0;
     // ASUMO QUE LO RECORRE EN ORDEN!
     for (const EigenPair& ep : l)
     {
