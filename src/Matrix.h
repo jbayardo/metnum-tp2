@@ -19,7 +19,10 @@ public:
 
     Matrix(Matrix &&m) : N(m.rows()), M(m.columns()), matrix(std::move(m.matrix)) {
         std::cerr << "Llamado al constructor por movimiento de Matriz " << this->rows() << "x" << this->columns() << std::endl;
-        std::cerr << "Dimensiones del vector de salida: " << this->matrix.size() << "x" << this->matrix[0].size() << std::endl;
+
+        if (this->matrix.size() > 0) {
+            std::cerr << "Dimensiones del vector de salida: " << this->matrix.size() << "x" << this->matrix[0].size() << std::endl;
+        }
     }
 
     template <std::size_t K>
@@ -29,7 +32,7 @@ public:
             throw new std::out_of_range("Filtro de bitset para Matriz con entradas insuficientes");
         }
 
-        if (this->rows() <= 0 || this->columns() <= 0) {
+        if (this->rows() < 0 || this->columns() < 0) {
             throw new std::invalid_argument("Dimensiones de Matriz inválidas");
         }
 
@@ -44,7 +47,9 @@ public:
             }
         }
 
-        std::cerr << "Dimensiones del vector de salida: " << this->matrix.size() << "x" << this->matrix[0].size() << std::endl;
+        if (this->matrix.size() > 0) {
+            std::cerr << "Dimensiones del vector de salida: " << this->matrix.size() << "x" << this->matrix[0].size() << std::endl;
+        }
     }
 
     Matrix(int N, int M);

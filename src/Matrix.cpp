@@ -16,7 +16,10 @@ Matrix::Matrix(int N, int M)
     }
 
     std::cerr << "Creando matriz de " << this->rows() << "x" << this->columns() << std::endl;
-    std::cerr << "Dimensiones del vector de salida: " << this->matrix.size() << "x" << this->matrix[0].size() << std::endl;
+
+    if (this->matrix.size() > 0) {
+        std::cerr << "Dimensiones del vector de salida: " << this->matrix.size() << "x" << this->matrix[0].size() << std::endl;
+    }
 }
 
 double &Matrix::operator()(const int &i, const int &j) {
