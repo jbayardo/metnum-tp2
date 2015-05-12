@@ -2,11 +2,15 @@
 // Created by Julian Bayardo on 5/8/15.
 //
 
+#include <chrono>
 #include "LinearAlgebra.h"
+#include "Counter.h"
 
 std::vector<double> operator*(const Matrix &m, const std::vector<double> &n) {
     if (n.size() < m.columns()) {
-        throw new std::out_of_range("Invalid vector size for matrix product");
+        std::stringstream fmt;
+        fmt << "Tamaño de matriz M es " << m.columns() << ", mientras que vector n es " << n.size();
+        throw new std::out_of_range(fmt.str());
     }
 
     std::vector<double> output = std::vector<double>();
@@ -33,12 +37,16 @@ std::vector<double> operator*(const Matrix &m, const std::vector<double> &n) {
  * @param condition condicion para verificar la convergencia del metodo
  */
 EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const Norm &norm, const ConditionF &condition) {
-    // Nos aseguramos que el vector tenga solo las coordenadas que vamos a usar
-    eigenVector.resize((unsigned long) A.columns());
+    if (A.columns() != A.rows()) {
+        throw new std::runtime_error("La matriz no es cuadrada en el método de la potencia");
+    }
 
     double eigenValue = 0.0;
-    int iteration = 0;
     double lastNorm = norm(eigenVector);
+    Counter iteration("PowerIterationCounter");
+
+    Counter timer("PowerIterationTimer");
+    auto start = std::chrono::steady_clock::now();
 
     // Verificamos convergencia
     while (!condition(A, eigenVector, eigenValue, iteration)) {
@@ -60,6 +68,10 @@ EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const
         ++iteration;
     }
 
+    auto end = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    timer.set(elapsed.count());
+
     return std::pair<double, std::vector<double>>(eigenValue, eigenVector);
 }
 
@@ -72,11 +84,22 @@ EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const
  * @return nueva matriz con las caracteristicas anunciadas
  */
 void deflation(Matrix &A, const EigenPair &eigen) {
+    if (A.columns() != A.rows()) {
+        throw new std::runtime_error("La matriz no es cuadrada en el método de deflación");
+    }
+
+    Counter timer("DeflationTimer");
+    auto start = std::chrono::steady_clock::now();
+
     for (int i = 0; i < A.rows(); ++i) {
         for (int j = 0; j < A.columns(); ++j) {
             A(i, j) -= eigen.first * eigen.second[i] * eigen.second[j];
         }
     }
+
+    auto end = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    timer.set(elapsed.count());
 }
 
 /**
@@ -88,13 +111,18 @@ void deflation(Matrix &A, const EigenPair &eigen) {
  */
 std::list<EigenPair> decompose(Matrix deflated, int k, const Norm &norm, const ConditionF &condition) {
     if (k >= deflated.columns()) {
-        throw new std::out_of_range("Too many eigenpairs to obtain");
+        std::stringstream fmt;
+        fmt << "Cantidad de autovalores esperado es demasiado grande, " << k << " en una matriz de " << deflated.columns();
+        throw new std::out_of_range(fmt.str());
     }
 
     std::list<EigenPair> output;
 
     // Vector inicial para esta iteracion
     std::vector<double> x0((unsigned long) deflated.columns(), 1.0);
+
+    Counter timer("DecomposeTimer");
+    auto start = std::chrono::steady_clock::now();
 
     for (int i = 0; i < k; ++i) {
         // Obtenemos el i-esimo eigenpair dominante
@@ -106,6 +134,10 @@ std::list<EigenPair> decompose(Matrix deflated, int k, const Norm &norm, const C
         // Lo guardamos al final de la lista
         output.push_back(dominant);
     }
+
+    auto end = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    timer.set(elapsed.count());
 
     return output;
 }
@@ -140,4 +172,10 @@ void dimensionReduction(const Matrix& src, Matrix& dst, const std::list<EigenPai
 
         c++;
     }
+}
+
+std::vector<double> operator*(const double &m, const std::vector<double> &n) {
+    std::vector<double> output(n);
+    std::transform(output.begin(), output.end(), output.begin(), [m](const double &x) -> double { return x * m; });
+    return output;
 }

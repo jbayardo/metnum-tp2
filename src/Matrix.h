@@ -7,43 +7,47 @@
 
 #include <iostream>
 #include <bitset>
-
-// Este magic number nos dice cuándo convertir automáticamente una matriz banda en una matriz normal.
-#define MAGIC_NUMBER 562154
+#include <vector>
 
 /*
-* Matriz Banda.
+* Matriz.
 */
 class Matrix {
     friend std::ostream &operator<<(std::ostream &, const Matrix &);
 public:
     Matrix(const Matrix &m);
 
+    Matrix(Matrix &&m) : N(m.rows()), M(m.columns()), matrix(std::move(m.matrix)) {
+        std::cerr << "Llamado al constructor por movimiento de Matriz " << this->rows() << "x" << this->columns() << std::endl;
+        std::cerr << "Dimensiones del vector de salida: " << this->matrix.size() << "x" << this->matrix[0].size() << std::endl;
+    }
+
     template <std::size_t K>
     Matrix(const Matrix &m, const std::bitset<K> &filter)
-            : N((int)filter.count()), M(m.columns()), uband(m.upper_bandwidth()), lband(std::min(m.lower_bandwidth(), N)) {
-        if (K != this->rows()) {
-            throw new std::out_of_range("Invalid filter for bitset");
+            : N((int)filter.count()), M(m.columns()), matrix((int)filter.count(), std::vector<double>(m.columns(), 0.0)) {
+        if (K != (std::size_t)m.rows()) {
+            throw new std::out_of_range("Filtro de bitset para Matriz con entradas insuficientes");
         }
 
+        if (this->rows() <= 0 || this->columns() <= 0) {
+            throw new std::invalid_argument("Dimensiones de Matriz inválidas");
+        }
+
+        std::cerr << "Filtrando matriz de " << m.rows() << "x" << m.columns() << " en " << this->rows() << "x" << this->columns() << std::endl;
+
         int last = 0;
-        int bound = this->lower_bandwidth() + this->upper_bandwidth() + 1;
-        this->matrix = new double*[this->rows()];
 
-        for (int i = 0; i < m.rows(); ++i) {
+        for (int i = 0; i < this->rows(); ++i) {
             if (filter.test((std::size_t)i)) {
-                this->matrix[last] = new double[bound];
-
-                for (int j = 0; j < bound; ++j) {
-                    (*this)(last, j) = m(i, j);
-                }
-
+                this->matrix[last] = m.matrix[i];
                 last++;
             }
         }
+
+        std::cerr << "Dimensiones del vector de salida: " << this->matrix.size() << "x" << this->matrix[0].size() << std::endl;
     }
 
-    Matrix(int N, int M, int lband = MAGIC_NUMBER, int uband = MAGIC_NUMBER);
+    Matrix(int N, int M);
 
     int inline rows() const {
         return this->N;
@@ -53,30 +57,18 @@ public:
         return this->M;
     }
 
-    int inline upper_bandwidth() const {
-        return this->uband;
-    }
-
-    int inline lower_bandwidth() const {
-        return this->lband;
-    }
-
-    double & operator()(const int &i, const int &j);
+    double &operator()(const int &i, const int &j);
     const double & operator()(const int &i, const int &j) const;
     Matrix & operator=(const Matrix &m);
     bool operator==(const Matrix &m) const;
     bool operator!=(const Matrix &m) const;
     Matrix & operator+=(const Matrix &m);
     Matrix & operator*=(const double &c);
-
-    ~Matrix();
 private:
     // Matrix
     int N;
     int M;
-    int uband;
-    int lband;
-    double **matrix;
+    std::vector< std::vector<double> > matrix;
 };
 
 std::ostream & operator<<(std::ostream &os, const Matrix &m);

@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
+
 from scripts.fabricate import *
 from scripts.settings import *
 from scripts.utils import listfiles

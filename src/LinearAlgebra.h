@@ -12,6 +12,7 @@
 #include <list>
 #include <numeric>
 #include <algorithm>
+#include <sstream>
 #include "Matrix.h"
 
 template <typename T>
@@ -23,14 +24,17 @@ typedef std::function<bool(const Matrix &, const std::vector<double> &, const do
 typedef std::pair<double, std::vector<double>> EigenPair;
 
 std::vector<double> operator*(const Matrix &m, const std::vector<double> &n);
-EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const Norm &norm, const ConditionF &condition);
+std::vector<double> operator*(const double &m, const std::vector<double> &n);
+EigenPair powerIteration(const Matrix &, std::vector<double>, const Norm &, const ConditionF &);
 void deflation(const Matrix &A, const EigenPair &eigen);
-std::list<EigenPair> decompose(const Matrix &A, int k, const Norm &norm, const ConditionF &condition);
+std::list<EigenPair> decompose(Matrix, int, const Norm &, const ConditionF &);
 void dimensionReduction(const Matrix& src, Matrix& dst, const std::list<EigenPair>& l);
 
 const DistanceF L2 = DistanceF([](const Matrix &A, int i0, const Matrix &B, int i1) -> double {
     if (B.columns() != A.columns()) {
-        throw new std::out_of_range("Invalid size for vector");
+        std::stringstream fmt;
+        fmt << "Tamaño de matriz A es " << A.columns() << ", mientras que B es " << B.columns();
+        throw new std::out_of_range(fmt.str());
     }
 
     double output = 0.0;
@@ -45,5 +49,17 @@ const DistanceF L2 = DistanceF([](const Matrix &A, int i0, const Matrix &B, int 
 const Norm N2 = Norm([](const std::vector<double> &v) -> double {
     return std::sqrt(std::inner_product(v.begin(), v.end(), v.begin(), 0.0));
 });
+
+auto CIterations = [](unsigned int limit) -> ConditionF {
+    return ConditionF([limit](const Matrix &A, const std::vector<double> &v, const double &c, unsigned int its) -> bool {
+        return its > limit;
+    });
+};
+
+/*auto CPrecision = [](double epsilon) -> ConditionF {
+    return ConditionF([epsilon](const Matrix &A, const std::vector<double> &v, const double &c, unsigned int its) -> bool {
+        return A * v - c * v < epsilon;
+    });
+};*/
 
 #endif //METNUM_TP2_LINEARALGEBRA_H
