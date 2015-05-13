@@ -35,7 +35,7 @@ const double &Matrix::operator()(const int &i, const int &j) const {
         throw new std::out_of_range("Index access out of range");
     }
 
-    return matrix[i][j];
+    return this->matrix[i][j];
 }
 
 Matrix &Matrix::operator=(const Matrix &m) {

@@ -13,7 +13,7 @@ std::vector<double> operator*(const Matrix &m, const std::vector<double> &n) {
         throw new std::out_of_range(fmt.str());
     }
 
-    std::vector<double> output = std::vector<double>();
+    std::vector<double> output(m.rows());
 
     for (int i = 0; i < m.rows(); ++i) {
         double tmp = 0.0;
@@ -41,12 +41,10 @@ EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const
         throw new std::runtime_error("La matriz no es cuadrada en el método de la potencia");
     }
 
+    Timer timer("PowerIterationTimer");
+    Counter iteration("PowerIterationCounter");
     double eigenValue = 0.0;
     double lastNorm = norm(eigenVector);
-    Counter iteration("PowerIterationCounter");
-
-    Counter timer("PowerIterationTimer");
-    auto start = std::chrono::steady_clock::now();
 
     // Verificamos convergencia
     while (!condition(A, eigenVector, eigenValue, iteration)) {
@@ -68,10 +66,6 @@ EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const
         ++iteration;
     }
 
-    auto end = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    timer.set(elapsed.count());
-
     return std::pair<double, std::vector<double>>(eigenValue, eigenVector);
 }
 
@@ -88,18 +82,13 @@ void deflation(Matrix &A, const EigenPair &eigen) {
         throw new std::runtime_error("La matriz no es cuadrada en el método de deflación");
     }
 
-    Counter timer("DeflationTimer");
-    auto start = std::chrono::steady_clock::now();
+    Timer timer("DeflationTimer");
 
     for (int i = 0; i < A.rows(); ++i) {
         for (int j = 0; j < A.columns(); ++j) {
             A(i, j) -= eigen.first * eigen.second[i] * eigen.second[j];
         }
     }
-
-    auto end = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    timer.set(elapsed.count());
 }
 
 /**
@@ -116,13 +105,10 @@ std::list<EigenPair> decompose(Matrix deflated, int k, const Norm &norm, const C
         throw new std::out_of_range(fmt.str());
     }
 
+    Timer timer("DecomposeTimer");
     std::list<EigenPair> output;
-
     // Vector inicial para esta iteracion
     std::vector<double> x0((unsigned long) deflated.columns(), 1.0);
-
-    Counter timer("DecomposeTimer");
-    auto start = std::chrono::steady_clock::now();
 
     for (int i = 0; i < k; ++i) {
         // Obtenemos el i-esimo eigenpair dominante
@@ -134,10 +120,6 @@ std::list<EigenPair> decompose(Matrix deflated, int k, const Norm &norm, const C
         // Lo guardamos al final de la lista
         output.push_back(dominant);
     }
-
-    auto end = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    timer.set(elapsed.count());
 
     return output;
 }

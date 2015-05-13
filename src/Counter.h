@@ -8,12 +8,15 @@
 #include <string>
 #include <list>
 #include <map>
+#include <chrono>
 #include <fstream>
 
 class Counter;
+class Timer;
 
 class Logger {
     friend class Counter;
+    friend class Timer;
 public:
     static Logger &getInstance() {
         static Logger instance;
@@ -69,10 +72,7 @@ private:
 
 class Counter {
 public:
-    Counter(std::string name, long long i = 0, unsigned int writeBack = 5)
-            : name(name), i(i), writeBack(writeBack), curWrite(0) {
-        Logger::getInstance().reset(this->name, this->i);
-    }
+    Counter(std::string name, long long i = 0) : name(name), i(i) { }
 
     std::string inline getName() const {
         return this->name;
@@ -84,56 +84,76 @@ public:
 
     Counter &operator+=(const Counter &m) {
         this->i += m.i;
-        this->curWrite++;
-
-        if (this->curWrite >= writeBack) {
-            Logger::getInstance().set(this->name, this->i);
-        }
-
         return *this;
     }
 
     Counter &operator-=(const Counter &m) {
         this->i -= m.i;
-        this->curWrite++;
-
-        if (this->curWrite >= writeBack) {
-            Logger::getInstance().set(this->name, this->i);
-        }
-
         return *this;
     }
 
     Counter &operator++() {
         this->i++;
-        this->curWrite++;
-
-        if (this->curWrite >= writeBack) {
-            Logger::getInstance().set(this->name, this->i);
-        }
-
         return *this;
     }
 
     Counter &operator--() {
         this->i++;
-        this->curWrite++;
-
-        if (this->curWrite >= writeBack) {
-            Logger::getInstance().set(this->name, this->i);
-        }
-
         return *this;
     }
 
     void set(long long x) {
-        Logger::getInstance().set(this->name, x);
+        i = x;
+    }
+
+    ~Counter() {
+        Logger::getInstance().reset(this->name, i);
     }
 private:
     std::string name;
     long long i;
-    unsigned int writeBack;
-    unsigned int curWrite;
+};
+
+class Timer {
+public:
+    Timer(std::string name) : name(name), start(std::chrono::steady_clock::now()), end(std::chrono::steady_clock::now()), stopped(false) { }
+
+    std::string inline getName() const {
+        return this->name;
+    }
+
+    void reset(bool write = false) {
+        this->end = std::chrono::steady_clock::now();
+
+        if (write) {
+            Logger::getInstance().reset(this->name, std::chrono::duration_cast<std::chrono::microseconds>(this->end - this->start).count());
+        }
+
+        this->start = std::chrono::steady_clock::now();
+        this->stopped = false;
+    }
+
+    void stop() {
+        if (stopped) {
+            throw new std::runtime_error("Tried to stop an already stopped timer.");
+        }
+
+        this->stopped = true;
+        this->end = std::chrono::steady_clock::now();
+        Logger::getInstance().reset(this->name, std::chrono::duration_cast<std::chrono::microseconds>(this->end - this->start).count());
+    }
+
+    ~Timer() {
+        if (!stopped) {
+            this->end = std::chrono::steady_clock::now();
+            Logger::getInstance().reset(this->name, std::chrono::duration_cast<std::chrono::microseconds>(this->end - this->start).count());
+        }
+    }
+private:
+    std::string name;
+    std::chrono::steady_clock::time_point start;
+    std::chrono::steady_clock::time_point end;
+    bool stopped;
 };
 
 #endif //METNUM_TP2_COUNTER_H
