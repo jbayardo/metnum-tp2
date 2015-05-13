@@ -6,6 +6,8 @@
 #include <bitset>
 #include <fstream>
 #include <sstream>
+#include <chrono>
+
 #include "LinearAlgebra.h"
 #include "Counter.h"
 
@@ -251,7 +253,78 @@ int main(int argc, char *argv[]) {
 
     switch (method) {
         case PCA_KNN:
-            // TODO: CROSS VALIDATION
+        {
+            for (int k = 0; k < tests; ++k) 
+            {
+                std::cerr << "Particion " << k << std::endl;
+                std::pair<Matrix, std::vector<Label>> fTrain = filterDataset(trainingSet, trainingLabels, masks[k]);
+                masks[k].flip();
+                std::pair<Matrix, std::vector<Label>> fTest = filterDataset(trainingSet, trainingLabels, masks[k]);
+
+                Matrix mean(1, DIM*DIM);
+
+                // TODO: Seria util que la propia matriz tenga una funcion que te de el vector promedio. La sumatoria la va generando cada vez que se cambian las filas.
+                for (int i = 0; i < fTrain.first.rows(); i++)
+                    for (int j = 0; j < fTrain.first.columns(); j++)
+                        mean(0,j) += fTrain.first(i,j)/fTrain.first.rows(); // esta bien fTrain.first.rows()?
+
+
+                // Debemos generar en la matriz de training lo siguiente en cada fila:
+                // x_i debe ser (x_i - mean)_traspuesto / (sqrt(n-1))
+                // para nuestro caso ya estan traspuestas.
+                for (int i = 0; i < fTrain.first.rows(); i++)
+                {
+                    for (int j = 0; j < fTrain.first.columns(); j++)
+                    {
+                        fTrain.first(i,j) -= mean(0, j);
+                        fTrain.first(i,j) /= sqrt(fTrain.first.rows()-1); // revisa fTrain.rows() quiero el total de imagenes.
+                    }
+                }
+
+                Matrix covariance(fTrain.first.columns(), fTrain.first.columns());
+                for (int j = 0; j < fTrain.first.columns(); j++) {
+                    for (int i = 0; i < fTrain.first.columns(); i++) {
+                        // j es la columna de X_t, que resulta ser la fila j-esima de X
+                        for (int k = 0; k < fTrain.first.rows(); k++) {
+                            covariance(j,i) += fTrain.first(k,j) * fTrain.first(k,i);
+                        }
+                    }
+                }
+
+                std::list<EigenPair> eigenPair = decompose(covariance, alpha, N2, CIterations(100));
+
+                Matrix trainChangeBasis(fTrain.first.rows(), alpha);
+                // En este paso vamos a realizar un cambio de espacio a todos los vectores
+                dimensionReduction(fTrain.first, trainChangeBasis, eigenPair);
+
+                for (int i = 0; i < fTest.first.rows(); i++)
+                {
+                    for (int j = 0; j < fTest.first.columns(); j++)
+                    {
+                        fTest.first(i,j) -= mean(0, j);
+                        fTest.first(i,j) /= sqrt(fTrain.first.rows()-1); // es intencional fTrain.first.rows()-1
+                    }
+                }
+
+                Matrix testChangeBasis(fTest.first.rows(), alpha);
+                dimensionReduction(fTest.first, testChangeBasis, eigenPair);
+
+                Counter hit("pcaHit");
+                Counter miss("pcaMiss");
+
+                // ya tenemos los vectores en sus respectivos cambios de bases
+                for (int i = 0; i < testChangeBasis.rows(); ++i) {
+                    Label l = kNN(neighbours, trainChangeBasis, fTrain.second, testChangeBasis, i, L2);
+                    if (l == fTest.second[i]) {
+                        ++hit;
+                    } else {
+                        ++miss;
+                    }
+                }
+
+
+            }
+
 
             // Las direcciones en las que hay mayor dispersión de datos son los autovectores de la matriz de covarianza.
             // Estos autovectores forman una base ortonormal.
@@ -280,11 +353,23 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            Matrix covariance(TRAIN_SIZE, TRAIN_SIZE);
+
+            /*Matrix covariance(TRAIN_SIZE, TRAIN_SIZE);
             for (int j = 0; j < TRAIN_SIZE; j++) {
                 for (int i = 0; i < TRAIN_SIZE; i++) {
                     // j es la columna de X_t, que resulta ser la fila j-esima de X
                     for (int k = 0; k < DIM*DIM; k++) {
+                        covariance(j,i) += trainingSet(k,j) * trainingSet(k,i);
+                    }
+                }
+            }*/
+
+            // revisar
+            Matrix covariance(trainingSet.columns(), trainingSet.columns());
+            for (int j = 0; j < trainingSet.columns(); j++) {
+                for (int i = 0; i < trainingSet.columns(); i++) {
+                    // j es la columna de X_t, que resulta ser la fila j-esima de X
+                    for (int k = 0; k < trainingSet.rows(); k++) {
                         covariance(j,i) += trainingSet(k,j) * trainingSet(k,i);
                     }
                 }
@@ -323,6 +408,7 @@ int main(int argc, char *argv[]) {
             }
 
             break;
+        }
         case KNN:
             std::cerr << "Comenzando kNN para las particiones" << std::endl;
 
