@@ -14,6 +14,7 @@
 */
 class Matrix {
     friend std::ostream &operator<<(std::ostream &, const Matrix &);
+    friend std::istream &operator>>(std::istream &, Matrix &);
 public:
     Matrix(const Matrix &m);
 
@@ -76,7 +77,8 @@ private:
     std::vector< std::vector<double> > matrix;
 };
 
-std::ostream & operator<<(std::ostream &os, const Matrix &m);
+std::ostream &operator<<(std::ostream &, const Matrix &);
+std::istream &operator>>(std::istream &, Matrix &);
 Matrix operator+(const Matrix &m, const Matrix &n);
 Matrix operator*(const Matrix &m, const double &c);
 Matrix operator*(const Matrix &m, const Matrix &n);

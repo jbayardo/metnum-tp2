@@ -109,6 +109,16 @@ std::ostream &operator<<(std::ostream &os, const Matrix &m) {
     return os;
 }
 
+std::istream &operator>>(std::istream &is, Matrix &m) {
+    for (int i = 0; i < m.rows(); ++i) {
+        for (int j = 0; j < m.columns(); ++j) {
+            is >> m(i, j);
+        }
+    }
+
+    return is;
+}
+
 Matrix operator+(const Matrix &m, const Matrix &n) {
     Matrix output(m);
     output += n;

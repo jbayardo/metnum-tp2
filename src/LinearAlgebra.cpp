@@ -107,7 +107,7 @@ void deflation(Matrix &A, const EigenPair &eigen) {
  * @param k cantidad de autovectores/autovalores a obtener
  * @ret lista ordenada por dominancia decreciente del autopar
  */
-std::list<EigenPair> decompose(Matrix deflated, int k, const Norm &norm, const ConditionF &condition) {
+std::list<EigenPair> decompose(Matrix deflated, int k, const Norm &norm, unsigned int iterations) {
     if (k >= deflated.columns()) {
         std::stringstream fmt;
         fmt << "Cantidad de autovalores esperado es demasiado grande, " << k << " en una matriz de " << deflated.columns();
@@ -117,11 +117,12 @@ std::list<EigenPair> decompose(Matrix deflated, int k, const Norm &norm, const C
     Timer timer("Decompose Timer");
     std::list<EigenPair> output;
     // Vector inicial para esta iteracion
+    // TODO: no ser boludos.
     std::vector<double> x0((unsigned long) deflated.columns(), 1.0);
 
     for (int i = 0; i < k; ++i) {
         // Obtenemos el i-esimo eigenpair dominante
-        EigenPair dominant = powerIteration(deflated, x0, norm, condition);
+        EigenPair dominant = powerIteration(deflated, x0, norm, iterations);
 
         // Hacemos deflacion, para el proximo paso
         deflation(deflated, dominant);

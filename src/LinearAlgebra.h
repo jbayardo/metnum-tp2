@@ -20,14 +20,13 @@ using min_queue = std::priority_queue<T, std::vector<T>, std::greater<T>>;
 // Matriz de datos, vector, número de línea.
 typedef std::function<double(const Matrix &, int, const Matrix &, int)> DistanceF;
 typedef std::function<double(const std::vector<double> &)> Norm;
-typedef std::function<bool(const Matrix &, const std::vector<double> &, const double &, unsigned int)> ConditionF;
 typedef std::pair<double, std::vector<double>> EigenPair;
 
 std::vector<double> operator*(const Matrix &m, const std::vector<double> &n);
 std::vector<double> operator*(const double &m, const std::vector<double> &n);
-EigenPair powerIteration(const Matrix &, std::vector<double>, const Norm &);
+EigenPair powerIteration(const Matrix &, std::vector<double>, const Norm &, unsigned int iterations);
 void deflation(const Matrix &A, const EigenPair &eigen);
-std::list<EigenPair> decompose(Matrix, int, const Norm &, const ConditionF &);
+std::list<EigenPair> decompose(Matrix, int, const Norm &, unsigned int iterations);
 void dimensionReduction(const Matrix& src, Matrix& dst, const std::list<EigenPair>& l);
 
 const DistanceF L2 = DistanceF([](const Matrix &A, int i0, const Matrix &B, int i1) -> double {

@@ -40,6 +40,7 @@ public:
     }
 private:
     void set(std::string name, long long x) {
+        std::cerr << name << ": " << x << std::endl;
         try {
             std::list<long long> &temporal(this->counters.at(name));
 
@@ -53,6 +54,8 @@ private:
     }
 
     void reset(std::string name, long long x = 0) {
+        std::cerr << "RESET " << name << ": " << x << std::endl;
+
         try {
             std::list<long long> &temporal(this->counters.at(name));
             temporal.push_front(x);
