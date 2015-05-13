@@ -58,8 +58,8 @@ EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const
             return x / length;
         });
 
-        // Actualizamos el autovalor
-        eigenValue = lastNorm / length;
+        // Actualizamos los datos
+        eigenValue = length/lastNorm;
         lastNorm = length;
 
         // Actualizamos el contador

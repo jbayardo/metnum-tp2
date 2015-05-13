@@ -228,102 +228,188 @@ int main(int argc, char *argv[]) {
 
     std::vector<Label> predictions(TEST_SIZE, 0.0);
 
-    if (method == PCA_KNN) {
-        // TODO: CROSS VALIDATION
-
-        // Las direcciones en las que hay mayor dispersión de datos son los autovectores de la matriz de covarianza.
-        // Estos autovectores forman una base ortonormal.
-        // Vamos a obtenerlos (cierta cantidad) y luego realizar cambio de base, para realizar KNN en menos dimensiones.
-
-        // Debemos armar la matriz de covarianza, de las imagenes de training test.
-
-        // primero debemos calcular el promedio de nuestras imagenes.
-        // lo definimos como una fila.
-        Matrix mean(1, DIM*DIM);
-
-        // TODO: Seria util que la propia matriz tenga una funcion que te de el vector promedio. La sumatoria la va generando cada vez que se cambian las filas.
-        for (int i = 0; i < trainingSet.rows(); i++)
-            for (int j = 0; j < trainingSet.columns(); j++)
-                mean(0,j) += trainingSet(i,j)/TRAIN_SIZE;
-
-        // Debemos generar en la matriz de training lo siguiente en cada fila:
-        // x_i debe ser (x_i - mean)_traspuesto / (sqrt(n-1))
-        // para nuestro caso ya estan traspuestas.
-        for (int i = 0; i < trainingSet.rows(); i++)
+    switch (method) {
+        case PCA_KNN:
         {
-            for (int j = 0; j < trainingSet.columns(); j++)
+            for (int k = 0; k < tests; ++k) 
             {
-                trainingSet(i,j) -= mean(0, j);
-                trainingSet(i,j) /= sqrt(TRAIN_SIZE-1);
-            }
-        }
+                std::cerr << "Particion " << k << std::endl;
+                std::pair<Matrix, std::vector<Label>> fTrain = filterDataset(trainingSet, trainingLabels, masks[k]);
+                masks[k].flip();
+                std::pair<Matrix, std::vector<Label>> fTest = filterDataset(trainingSet, trainingLabels, masks[k]);
 
-        Matrix covariance(TRAIN_SIZE, TRAIN_SIZE);
-        for (int j = 0; j < TRAIN_SIZE; j++) {
-            for (int i = 0; i < TRAIN_SIZE; i++) {
-                // j es la columna de X_t, que resulta ser la fila j-esima de X
-                for (int k = 0; k < DIM*DIM; k++) {
-                    covariance(j,i) += trainingSet(k,j) * trainingSet(k,i);
+                Matrix mean(1, DIM*DIM);
+
+                // TODO: Seria util que la propia matriz tenga una funcion que te de el vector promedio. La sumatoria la va generando cada vez que se cambian las filas.
+                for (int i = 0; i < fTrain.first.rows(); i++)
+                    for (int j = 0; j < fTrain.first.columns(); j++)
+                        mean(0,j) += fTrain.first(i,j)/fTrain.first.rows(); // esta bien fTrain.first.rows()?
+
+
+                // Debemos generar en la matriz de training lo siguiente en cada fila:
+                // x_i debe ser (x_i - mean)_traspuesto / (sqrt(n-1))
+                // para nuestro caso ya estan traspuestas.
+                for (int i = 0; i < fTrain.first.rows(); i++)
+                {
+                    for (int j = 0; j < fTrain.first.columns(); j++)
+                    {
+                        fTrain.first(i,j) -= mean(0, j);
+                        fTrain.first(i,j) /= sqrt(fTrain.first.rows()-1); // revisa fTrain.rows() quiero el total de imagenes.
+                    }
+                }
+
+                Matrix covariance(fTrain.first.columns(), fTrain.first.columns());
+                for (int j = 0; j < fTrain.first.columns(); j++) {
+                    for (int i = 0; i < fTrain.first.columns(); i++) {
+                        // j es la columna de X_t, que resulta ser la fila j-esima de X
+                        for (int k = 0; k < fTrain.first.rows(); k++) {
+                            covariance(j,i) += fTrain.first(k,j) * fTrain.first(k,i);
+                        }
+                    }
+                }
+
+                std::list<EigenPair> eigenPair = decompose(covariance, alpha, N2, CIterations(100));
+
+                Matrix trainChangeBasis(fTrain.first.rows(), alpha);
+                // En este paso vamos a realizar un cambio de espacio a todos los vectores
+                dimensionReduction(fTrain.first, trainChangeBasis, eigenPair);
+
+                for (int i = 0; i < fTest.first.rows(); i++)
+                {
+                    for (int j = 0; j < fTest.first.columns(); j++)
+                    {
+                        fTest.first(i,j) -= mean(0, j);
+                        fTest.first(i,j) /= sqrt(fTrain.first.rows()-1); // es intencional fTrain.first.rows()-1
+                    }
+                }
+
+                Matrix testChangeBasis(fTest.first.rows(), alpha);
+                dimensionReduction(fTest.first, testChangeBasis, eigenPair);
+
+                Counter hit("pcaHit");
+                Counter miss("pcaMiss");
+
+                // ya tenemos los vectores en sus respectivos cambios de bases
+                for (int i = 0; i < testChangeBasis.rows(); ++i) {
+                    Label l = kNN(neighbours, trainChangeBasis, fTrain.second, testChangeBasis, i, L2);
+                    if (l == fTest.second[i]) {
+                        ++hit;
+                    } else {
+                        ++miss;
+                    }
+                }
+
+
+            }
+
+
+            // Las direcciones en las que hay mayor dispersión de datos son los autovectores de la matriz de covarianza.
+            // Estos autovectores forman una base ortonormal.
+            // Vamos a obtenerlos (cierta cantidad) y luego realizar cambio de base, para realizar KNN en menos dimensiones.
+
+            // Debemos armar la matriz de covarianza, de las imagenes de training test.
+
+            // primero debemos calcular el promedio de nuestras imagenes.
+            // lo definimos como una fila.
+            Matrix mean(1, DIM*DIM);
+
+            // TODO: Seria util que la propia matriz tenga una funcion que te de el vector promedio. La sumatoria la va generando cada vez que se cambian las filas.
+            for (int i = 0; i < trainingSet.rows(); i++)
+                for (int j = 0; j < trainingSet.columns(); j++)
+                    mean(0,j) += trainingSet(i,j)/TRAIN_SIZE;
+
+            // Debemos generar en la matriz de training lo siguiente en cada fila:
+            // x_i debe ser (x_i - mean)_traspuesto / (sqrt(n-1))
+            // para nuestro caso ya estan traspuestas.
+            for (int i = 0; i < trainingSet.rows(); i++)
+            {
+                for (int j = 0; j < trainingSet.columns(); j++)
+                {
+                    trainingSet(i,j) -= mean(0, j);
+                    trainingSet(i,j) /= sqrt(TRAIN_SIZE-1);
                 }
             }
-        }
-
-        // la matriz covariance es simetrica
-        // no nos importa buscar los autovalores, solo los autovectores.
-
-        std::list<EigenPair> eigenPair = decompose(covariance, alpha, N2, CIterations(100));
-        // asumimos que aca tenemos los autovectores y autovalores
 
 
-        Matrix trainChangeBasis(TRAIN_SIZE, alpha);
-        // En este paso vamos a realizar un cambio de espacio a todos los vectores
-        dimensionReduction(trainingSet, trainChangeBasis, eigenPair);
+            /*Matrix covariance(TRAIN_SIZE, TRAIN_SIZE);
+            for (int j = 0; j < TRAIN_SIZE; j++) {
+                for (int i = 0; i < TRAIN_SIZE; i++) {
+                    // j es la columna de X_t, que resulta ser la fila j-esima de X
+                    for (int k = 0; k < DIM*DIM; k++) {
+                        covariance(j,i) += trainingSet(k,j) * trainingSet(k,i);
+                    }
+                }
+            }*/
 
-        // a cada imagen del testing set debemos restarle mean y dividirlos por sqrt(TRAIN_SIZE-1)
-        // segun diapositivas de la clase.
-
-        for (int i = 0; i < testingSet.rows(); i++)
-        {
-            for (int j = 0; j < testingSet.columns(); j++)
-            {
-                testingSet(i,j) -= mean(0, j);
-                testingSet(i,j) /= sqrt(TRAIN_SIZE-1);
-            }
-        }
-
-        Matrix testChangeBasis(TEST_SIZE, alpha);
-        dimensionReduction(testingSet, testChangeBasis, eigenPair);
-
-        // ya tenemos los vectores en sus respectivos cambios de bases
-        for (int i = 0; i < testChangeBasis.rows(); ++i) {
-            Label l = kNN(neighbours, trainChangeBasis, trainingLabels, testChangeBasis, i, L2);
-            predictions[i] = l;
-        }
-    } else {
-        std::cerr << "Comenzando kNN para las particiones" << std::endl;
-
-        for (int k = 0; k < tests; ++k) {
-            std::cerr << "Particion " << k << std::endl;
-            std::pair<Matrix, std::vector<Label>> fTrain = filterDataset(trainingSet, trainingLabels, masks[k]);
-            masks[k].flip();
-            std::pair<Matrix, std::vector<Label>> fTest = filterDataset(trainingSet, trainingLabels, masks[k]);
-
-            Counter hit("kNNHit");
-            Counter miss("kNNMiss");
-            Timer timer("kNNPartitionTimer");
-
-            for (int i = 0; i < fTest.first.rows(); ++i) {
-                Label l = kNN(neighbours, fTrain.first, fTrain.second, fTest.first, i, L2);
-
-                if (l == fTest.second[i]) {
-                    ++hit;
-                } else {
-                    ++miss;
+            // revisar
+            Matrix covariance(trainingSet.columns(), trainingSet.columns());
+            for (int j = 0; j < trainingSet.columns(); j++) {
+                for (int i = 0; i < trainingSet.columns(); i++) {
+                    // j es la columna de X_t, que resulta ser la fila j-esima de X
+                    for (int k = 0; k < trainingSet.rows(); k++) {
+                        covariance(j,i) += trainingSet(k,j) * trainingSet(k,i);
+                    }
                 }
             }
-        }
 
-        std::cerr << "Comenzando kNN para el testing set" << std::endl;
+            // la matriz covariance es simetrica
+            // no nos importa buscar los autovalores, solo los autovectores.
+
+            std::list<EigenPair> eigenPair = decompose(covariance, alpha, N2, CIterations(100));
+            // asumimos que aca tenemos los autovectores y autovalores
+
+
+            Matrix trainChangeBasis(TRAIN_SIZE, alpha);
+            // En este paso vamos a realizar un cambio de espacio a todos los vectores
+            dimensionReduction(trainingSet, trainChangeBasis, eigenPair);
+
+            // a cada imagen del testing set debemos restarle mean y dividirlos por sqrt(TRAIN_SIZE-1)
+            // segun diapositivas de la clase.
+
+            for (int i = 0; i < testingSet.rows(); i++)
+            {
+                for (int j = 0; j < testingSet.columns(); j++)
+                {
+                    testingSet(i,j) -= mean(0, j);
+                    testingSet(i,j) /= sqrt(TRAIN_SIZE-1);
+                }
+            }
+
+            Matrix testChangeBasis(TEST_SIZE, alpha);
+            dimensionReduction(testingSet, testChangeBasis, eigenPair);
+
+            // ya tenemos los vectores en sus respectivos cambios de bases
+            for (int i = 0; i < testChangeBasis.rows(); ++i) {
+                Label l = kNN(neighbours, trainChangeBasis, trainingLabels, testChangeBasis, i, L2);
+                predictions[i] = l;
+            }
+
+            break;
+        }
+        case KNN:
+            std::cerr << "Comenzando kNN para las particiones" << std::endl;
+
+            for (int k = 0; k < tests; ++k) {
+                std::cerr << "Particion " << k << std::endl;
+                std::pair<Matrix, std::vector<Label>> fTrain = filterDataset(trainingSet, trainingLabels, masks[k]);
+                masks[k].flip();
+                std::pair<Matrix, std::vector<Label>> fTest = filterDataset(trainingSet, trainingLabels, masks[k]);
+
+                Counter hit("kNNHit");
+                Counter miss("kNNMiss");
+
+                for (int i = 0; i < fTest.first.rows(); ++i) {
+                    Label l = kNN(neighbours, fTrain.first, fTrain.second, fTest.first, i, L2);
+
+                    if (l == fTest.second[i]) {
+                        ++hit;
+                    } else {
+                        ++miss;
+                    }
+                }
+            }
+
+            std::cerr << "Comenzando kNN para el testing set" << std::endl;
 
         Timer timer("kNNTestingTimer");
 
@@ -331,12 +417,12 @@ int main(int argc, char *argv[]) {
             Label l = kNN(neighbours, trainingSet, trainingLabels, testingSet, i, L2);
             predictions[i] = l;
 
-            std::cerr << "Predicción " << i << ": " << l << std::endl;
-
-            if (i % 100 == 0) {
-                std::cerr << "Progreso: " << i << std::endl;
+                if (i % 100 == 0) {
+                    std::cerr << "Progreso: " << i << std::endl;
+                }
             }
-        }
+
+            break;
     }
 
     Timer timer("outputDatasetTimer");
