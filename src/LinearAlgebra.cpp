@@ -13,7 +13,7 @@ std::vector<double> operator*(const Matrix &m, const std::vector<double> &n) {
         throw new std::out_of_range(fmt.str());
     }
 
-    std::vector<double> output = std::vector<double>();
+    std::vector<double> output(n.size());
 
     for (int i = 0; i < m.rows(); ++i) {
         double tmp = 0.0;
