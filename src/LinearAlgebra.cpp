@@ -36,35 +36,44 @@ std::vector<double> operator*(const Matrix &m, const std::vector<double> &n) {
  * @param norm norma vectorial para actualizar los valores
  * @param condition condicion para verificar la convergencia del metodo
  */
-EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const Norm &norm, const ConditionF &condition) {
+EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const Norm &norm, unsigned int iterations) {
     if (A.columns() != A.rows()) {
-        throw new std::runtime_error("La matriz no es cuadrada en el método de la potencia");
+        throw new std::invalid_argument("La matriz no es cuadrada en el método de la potencia");
     }
 
-    Timer timer("PowerIterationTimer");
-    Counter iteration("PowerIterationCounter");
-    double eigenValue = 0.0;
-    double lastNorm = norm(eigenVector);
+    if (iterations <= 0) {
+        throw new std::invalid_argument("La cantidad de iteraciones para el método de la potencia debe ser mayor a 0");
+    }
+
+    Timer timer("Power Iteration Timer");
+    Counter iteration("Power Iteration Iteration Counter");
+    double length = norm(eigenVector);
 
     // Verificamos convergencia
-    while (!condition(A, eigenVector, eigenValue, iteration)) {
+    while (iteration < iterations) {
         // Elevamos a potencia
         eigenVector = A * eigenVector;
 
         // Normalizamos el vector
-        double length = norm(eigenVector);
+        length = norm(eigenVector);
 
         std::transform(eigenVector.begin(), eigenVector.end(), eigenVector.begin(), [length](const double &x) -> double {
             return x / length;
         });
 
-        // Actualizamos los datos
-        eigenValue = length/lastNorm;
-        lastNorm = length;
-
         // Actualizamos el contador
         ++iteration;
     }
+
+    double eigenValue = 0.0;
+
+    for (int i = 0; i < A.rows(); ++i) {
+        for (int j = 0; j < A.rows(); ++j) {
+            eigenValue += eigenVector[i] * eigenVector[j] * A(i, j);
+        }
+    }
+
+    eigenValue /= length;
 
     return std::pair<double, std::vector<double>>(eigenValue, eigenVector);
 }
@@ -82,7 +91,7 @@ void deflation(Matrix &A, const EigenPair &eigen) {
         throw new std::runtime_error("La matriz no es cuadrada en el método de deflación");
     }
 
-    Timer timer("DeflationTimer");
+    Timer timer("Deflation Timer");
 
     for (int i = 0; i < A.rows(); ++i) {
         for (int j = 0; j < A.columns(); ++j) {
@@ -105,7 +114,7 @@ std::list<EigenPair> decompose(Matrix deflated, int k, const Norm &norm, const C
         throw new std::out_of_range(fmt.str());
     }
 
-    Timer timer("DecomposeTimer");
+    Timer timer("Decompose Timer");
     std::list<EigenPair> output;
     // Vector inicial para esta iteracion
     std::vector<double> x0((unsigned long) deflated.columns(), 1.0);
