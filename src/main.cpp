@@ -20,20 +20,18 @@ typedef enum {
  * Devuelve un número del 0 al 9 que representa el dígito reconocido
  */
 Label kNN(int k, const Matrix &trainingSet, const std::vector<Label> &trainingLabels, Matrix &evSet, int i1, const DistanceF &f) {
-    //Timer timer("kNN Timer");
+    Timer timer("kNN Timer");
     min_queue<std::pair<double, Label>> distances;
 
     for (int i = 0; i < trainingSet.rows(); ++i) {
-        double dist = f(trainingSet, i, evSet, i1);
-        double lbl = trainingLabels[i];
-        distances.push(std::make_pair(dist, lbl));
+        distances.push(std::make_pair(f(trainingSet, i, evSet, i1), trainingLabels[i]));
     }
     
     int i = 0;
     int labels[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     while (!distances.empty() && i < k) {
-        labels[(int)distances.top().second]++;
+        labels[(int) distances.top().second]++;
         distances.pop();
         ++i;
     }
@@ -310,7 +308,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         std::cerr << "Corriendo kNN" << std::endl;
 
         for (int i = 0; i < testChangeBasis.rows(); ++i) {
-            Label l = kNN(neighbours, trainChangeBasis, fTest.second, testChangeBasis, i, L2);
+            Label l = kNN(neighbours, trainChangeBasis, fTrain.second, testChangeBasis, i, L2);
 
             if (l == fTest.second[i]) {
                 ++hit;
