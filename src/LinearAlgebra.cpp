@@ -64,20 +64,14 @@ EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const
     }
 
     double eigenValue = 0.0;
-    length = 0.0;
 
     for (int i = 0; i < A.rows(); ++i) {
-        double tmp = 0.0;
-        length += std::pow(eigenVector[i], 2);
-
         for (int j = 0; j < A.rows(); ++j) {
-            tmp += eigenVector[j] * A(i, j);
+            eigenValue += eigenVector[i] * eigenVector[j] * A(i, j);
         }
-
-        eigenValue = eigenVector[i] * tmp;
     }
 
-    eigenValue /= std::sqrt(length);
+    eigenValue /= norm(eigenVector);
 
     return std::pair<double, std::vector<double>>(eigenValue, eigenVector);
 }
@@ -124,8 +118,8 @@ std::list<EigenPair> decompose(Matrix deflated, int k, const Norm &norm, unsigne
     std::vector<double> x0((unsigned long) deflated.columns(), 0.0);
 
     for (int i = 0; i < k; ++i) {
-        for (int i = 0; i < deflated.columns(); ++i) {
-            x0[i] = random() % 1337 + 1;
+        for (int l = 0; l < deflated.columns(); ++l) {
+            x0[l] = random() % 1337 + 1;
         }
 
         // Obtenemos el i-esimo eigenpair dominante
