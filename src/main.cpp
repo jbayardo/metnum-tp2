@@ -1,7 +1,3 @@
-//
-// Created by Julian Bayardo on 4/25/15.
-//
-
 #include <vector>
 #include <bitset>
 #include <fstream>
@@ -30,8 +26,7 @@ Label kNN(int k, const Matrix &trainingSet, const std::vector<Label> &trainingLa
     for (int i = 0; i < trainingSet.rows(); ++i) {
         distances.push(std::pair<double, Label>(f(trainingSet, i, evSet, i1), trainingLabels[i]));
     }
-
-    // TODO: considerar posibilidades de clasificacion.
+    
     int i = 0;
     int labels[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -49,7 +44,7 @@ Label kNN(int k, const Matrix &trainingSet, const std::vector<Label> &trainingLa
         }
     }
 
-    return maximum;
+    return (double)maximum;
 }
 
 void loadTrainingSet(std::string path, Matrix &trainingSet, std::vector<Label> &trainingLabels) {
@@ -199,20 +194,12 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         std::cerr << "Casos de test concretos: " << fTest.first.rows() << std::endl;
 
         Timer timer("kNN Partition Timer");
-
-        // Las direcciones en las que hay mayor dispersión de datos son los autovectores de la matriz de covarianza.
-        // Estos autovectores forman una base ortonormal.
-        // Vamos a obtenerlos (cierta cantidad) y luego realizar cambio de base, para realizar KNN en menos dimensiones.
-
-        // Debemos armar la matriz de covarianza, de las imagenes de training test.
-
-        // primero debemos calcular el promedio de nuestras imagenes.
-        // lo definimos como una fila.
         std::cerr << "Calculando promedio de variables para la particion " << k << std::endl;
-        Matrix mean(1, DIM*DIM);
-        Timer PCAMean("PCA Mean Testing Dataset");
 
-        // TODO: Seria util que la propia matriz tenga una funcion que te de el vector promedio. La sumatoria la va generando cada vez que se cambian las filas.
+        Matrix mean(1, DIM*DIM);
+
+        Timer PCAMean("PCA Mean Training");
+
         for (int j = 0; j < fTrain.first.columns(); j++) {
             for (int i = 0; i < fTrain.first.rows(); i++) {
                 mean(0, j) += fTrain.first(i, j);
@@ -223,8 +210,21 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
 
         PCAMean.stop();
 
+        Timer PCANormalizeTraining("PCA Normalize Training");
+
+        double size = std::sqrt(fTrain.first.rows() - 1);
+
+        for (int j = 0; j < fTrain.first.columns(); ++j) {
+            for (int i = 0; i < fTrain.first.rows(); ++i) {
+                fTrain.first(i, j) -= mean(0, j);
+                fTrain.first(i, j) /= size;
+            }
+        }
+
+        PCANormalizeTraining.stop();
+
         Matrix covariance(fTrain.first.columns(), fTrain.first.columns());
-        std::string covFileName = path + "covariance" + std::to_string(k) + append; // TODO: convertir k a string
+        std::string covFileName = path + "covariance" + std::to_string(k) + append;
         std::fstream inCov(covFileName, std::ios_base::in);
 
         if (inCov.good()) {
@@ -233,25 +233,19 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
             inCov.close();
         } else {
             std::cerr << "Calculando matriz de covarianza la partición " << k << " training dataset" << std::endl;
-            Timer PCACov("PCA Covariance Testing Dataset");
+            Timer PCACov("PCA Covariance Training");
 
-            // TODO: hacemos dos veces la diagonal
             for (int j = 0; j < covariance.columns(); j++) {
                 if (j % 10 == 0) {
                     std::cerr << "Progreso: " << j << "/" << covariance.columns() << std::endl;
                 }
 
-                double m1 = mean(0, j);
-
-                for (int k = 0; k <= j; k++) {
-                    double m2 = mean(0, k);
-
+                for (int l = 0; l <= j; l++) {
                     for (int i = 0; i < fTrain.first.rows(); i++) {
-                        covariance(j, k) += (fTrain.first(i, j) - m1) * (fTrain.first(i, k) - m2);
+                        covariance(j, l) += fTrain.first(i, j) * fTrain.first(i, l);
                     }
 
-                    covariance(j, k) /= (fTrain.first.rows() - 1 );
-                    covariance(k, j) = covariance(j, k);
+                    covariance(l, j) = covariance(j, l);
                 }
             }
 
@@ -268,16 +262,12 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
             }
         }
 
-        // no nos importa buscar los autovalores, solo los autovectores.
-
+        // Obtenemos los autovalores y autovectores de la matriz de covarianzas
         std::list<EigenPair> eigenPair = decompose(covariance, alpha, N2, 1000);
-        // asumimos que aca tenemos los autovectores y autovalores
 
-        std::string eigenFileName = path + "eigenvalues" + std::to_string(k) + append; // TODO: convertir k a string
-        std::fstream eigenvalues(eigenFileName, std::ios_base::out);
+        std::fstream eigenvalues(output, std::ios_base::out | std::ios_base::app);
 
         if (eigenvalues.good()) {
-            eigenvalues.precision(7);
             std::cerr << "Guardando autovalores para los test." << std::endl;
 
             for (const EigenPair& ep : eigenPair) {
@@ -287,6 +277,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
             eigenvalues.close();
         } else {
             std::cerr << "Error guardando los autovalores, siguiendo igualmente" << std::endl;
+            std::cerr << "ALERTA: LOS NO VAN A PASAR" << std::endl;
         }
 
         std::cerr << "Haciendo cambio de base para el training dataset" << std::endl;
@@ -296,13 +287,18 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
 
         // a cada imagen del testing set debemos restarle mean y dividirlos por sqrt(fTrain.first.rows()-1)
         // segun diapositivas de la clase.
+        Timer PCANormalizeTesting("PCA Normalize Testing");
+
+        size = std::sqrt(fTest.first.rows()-1);
 
         for (int i = 0; i < fTest.first.rows(); i++) {
             for (int j = 0; j < fTest.first.columns(); j++) {
-                fTest.first(i,j) -= mean(0, j);
-                fTest.first(i,j) /= sqrt(fTrain.first.rows()-1);
+                fTest.first(i, j) -= mean(0, j);
+                fTest.first(i, j) /= size;
             }
         }
+
+        PCANormalizeTesting.stop();
 
         std::cerr << "Haciendo cambio de base para el testing dataset" << std::endl;
         Matrix testChangeBasis(fTest.first.rows(), alpha);
@@ -311,6 +307,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         // ya tenemos los vectores en sus respectivos cambios de bases
         Counter hit("kNN Hit");
         Counter miss("kNN Miss");
+        Timer kNNPartitionTimer("kNN Partition Timer");
 
         for (int i = 0; i < testChangeBasis.rows(); ++i) {
             Label l = kNN(neighbours, trainChangeBasis, fTest.second, testChangeBasis, i, L2);
@@ -322,122 +319,9 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
             }
         }
     }
-
-    std::cerr << "Comenzando PCA para el testing dataset" << std::endl;
-    // Las direcciones en las que hay mayor dispersión de datos son los autovectores de la matriz de covarianza.
-    // Estos autovectores forman una base ortonormal.
-    // Vamos a obtenerlos (cierta cantidad) y luego realizar cambio de base, para realizar KNN en menos dimensiones.
-
-    // Debemos armar la matriz de covarianza, de las imagenes de training test.
-
-    // primero debemos calcular el promedio de nuestras imagenes.
-    // lo definimos como una fila.
-    std::cerr << "Calculando promedio de variables para el training dataset" << std::endl;
-    Matrix mean(1, DIM*DIM);
-    Timer PCAMean("PCA Mean Training Dataset");
-
-    // TODO: Seria util que la propia matriz tenga una funcion que te de el vector promedio. La sumatoria la va generando cada vez que se cambian las filas.
-    for (int j = 0; j < trainingSet.columns(); j++) {
-        for (int i = 0; i < trainingSet.rows(); i++) {
-            mean(0, j) += trainingSet(i, j);
-        }
-
-        mean(0, j) /= trainingSet.rows();
-    }
-
-    PCAMean.stop();
-
-    Matrix covariance(trainingSet.columns(), trainingSet.columns());
-    std::string covFileName = path + "covariance.ssv";
-    std::fstream inCov(covFileName, std::ios_base::in);
-
-    if (inCov.good()) {
-        std::cerr << "Levantando matriz de covarianza para el training dataset" << std::endl;
-        inCov >> covariance;
-        inCov.close();
-    } else {
-        std::cerr << "Calculando matriz de covarianza para el training dataset" << std::endl;
-        Timer PCACov("PCA Covariance Testing Dataset");
-
-        // TODO: hacemos dos veces la diagonal
-        for (int j = 0; j < covariance.columns(); j++) {
-            if (j % 10 == 0) {
-                std::cerr << "Progreso: " << j << "/" << covariance.columns() << std::endl;
-            }
-
-            double m1 = mean(0, j);
-
-            for (int k = 0; k <= j; k++) {
-                double m2 = mean(0, k);
-
-                for (int i = 0; i < trainingSet.rows(); i++) {
-                    covariance(j, k) += (trainingSet(i, j) - m1) * (trainingSet(i, k) - m2);
-                }
-
-                covariance(j, k) /= (trainingSet.rows() - 1 );
-                covariance(k, j) = covariance(j, k);
-            }
-        }
-
-        PCACov.stop();
-
-        std::fstream outCov(covFileName, std::ios_base::out);
-
-        if (outCov.good()) {
-            std::cerr << "Guardando matriz de covarianza para el training dataset" << std::endl;
-            outCov << covariance;
-            outCov.close();
-        } else {
-            std::cerr << "Error guardando la matriz de covarianza, siguiendo igualmente" << std::endl;
-        }
-    }
-
-    // no nos importa buscar los autovalores, solo los autovectores.
-
-    std::list<EigenPair> eigenPair = decompose(covariance, alpha, N2, 100);
-    // asumimos que aca tenemos los autovectores y autovalores
-
-    std::fstream eigenvalues(output, std::ios_base::out);
-
-    if (eigenvalues.good()) {
-        std::cerr << "Guardando autovalores para los test." << std::endl;
-
-        for (const EigenPair& ep : eigenPair) {
-            eigenvalues << ep.first << std::endl;
-        }
-
-        eigenvalues.close();
-    } else {
-        std::cerr << "Error guardando los autovalores, siguiendo igualmente" << std::endl;
-    }
-
-    std::cerr << "Haciendo cambio de base para el training dataset" << std::endl;
-    Matrix trainChangeBasis(TRAIN_SIZE, alpha);
-    // En este paso vamos a realizar un cambio de espacio a todos los vectores
-    dimensionReduction(trainingSet, trainChangeBasis, eigenPair);
-
-    // a cada imagen del testing set debemos restarle mean y dividirlos por sqrt(TRAIN_SIZE-1)
-    // segun diapositivas de la clase.
-
-    for (int i = 0; i < testingSet.rows(); i++) {
-        for (int j = 0; j < testingSet.columns(); j++) {
-            testingSet(i,j) -= mean(0, j);
-            testingSet(i,j) /= sqrt(TRAIN_SIZE-1);
-        }
-    }
-
-    std::cerr << "Haciendo cambio de base para el testing dataset" << std::endl;
-    Matrix testChangeBasis(TEST_SIZE, alpha);
-    dimensionReduction(testingSet, testChangeBasis, eigenPair);
-
-    // ya tenemos los vectores en sus respectivos cambios de bases
-    for (int i = 0; i < testChangeBasis.rows(); ++i) {
-        Label l = kNN(neighbours, trainChangeBasis, trainingLabels, testChangeBasis, i, L2);
-        predictions[i] = l;
-    }
 }
 
-void NORMALKNN(int alpha, int neighbours, int tests, std::vector<std::bitset<TRAIN_SIZE>> &masks,
+void NORMALKNN(int neighbours, int tests, std::vector<std::bitset<TRAIN_SIZE>> &masks,
                Matrix &trainingSet, std::vector<Label> &trainingLabels, Matrix &testingSet, std::vector<Label> &predictions) {
     std::cerr << "Comenzando kNN para las particiones" << std::endl;
 
@@ -449,7 +333,7 @@ void NORMALKNN(int alpha, int neighbours, int tests, std::vector<std::bitset<TRA
 
         Counter hit("kNN Hit");
         Counter miss("kNN Miss");
-        Timer timer("kNN Partition Timer");
+        Timer kNNPartitionTimer("kNN Partition Timer");
 
         for (int i = 0; i < fTest.first.rows(); ++i) {
             Label l = kNN(neighbours, fTrain.first, fTrain.second, fTest.first, i, L2);
@@ -464,7 +348,7 @@ void NORMALKNN(int alpha, int neighbours, int tests, std::vector<std::bitset<TRA
 
     std::cerr << "Comenzando kNN para el testing dataset" << std::endl;
 
-    Timer timer("kNN Testing Timer");
+    Timer kNNTestingTimer("kNN Testing Timer");
 
     for (int i = 0; i < testingSet.rows(); ++i) {
         Label l = kNN(neighbours, trainingSet, trainingLabels, testingSet, i, L2);
@@ -481,6 +365,7 @@ std::string basename(std::string const& pathname) {
 }
 
 int main(int argc, char *argv[]) {
+    Timer programTimer("Program Timer");
     SolutionMethod method = SolutionMethod::KNN;
 
     if (argc < 3) {
@@ -533,7 +418,7 @@ int main(int argc, char *argv[]) {
     if (method == PCA_KNN) {
         PCAKNN(path, std::string(argv[2]), basename(std::string(argv[2])), alpha, neighbours, tests, masks, trainingSet, trainingLabels, testingSet, predictions);
     } else {
-        NORMALKNN(alpha, neighbours, tests, masks, trainingSet, trainingLabels, testingSet, predictions);
+        NORMALKNN(neighbours, tests, masks, trainingSet, trainingLabels, testingSet, predictions);
     }
 
     Timer timer("Output Dataset Timer");

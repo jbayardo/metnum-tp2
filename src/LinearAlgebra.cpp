@@ -1,7 +1,3 @@
-//
-// Created by Julian Bayardo on 5/8/15.
-//
-
 #include <chrono>
 #include "LinearAlgebra.h"
 #include "Counter.h"
@@ -46,7 +42,8 @@ EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const
 
     double length = norm(eigenVector);
 
-    for (int j = 0; j < eigenVector.size(); ++j) {
+    // Normalizamos el autovector
+    for (int j = 0; j < A.rows(); ++j) {
         eigenVector[j] /= length;
     }
 
@@ -67,19 +64,20 @@ EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const
     }
 
     double eigenValue = 0.0;
-    /*std::vector<double> outfuck(A*eigenVector);
-
-    for (int i = 0; i < outfuck.size(); ++i) {
-        eigenValue += outfuck[i] * outfuck[i];
-    }*/
+    length = 0.0;
 
     for (int i = 0; i < A.rows(); ++i) {
+        double tmp = 0.0;
+        length += std::pow(eigenVector[i], 2);
+
         for (int j = 0; j < A.rows(); ++j) {
-            eigenValue += eigenVector[i] * eigenVector[j] * A(i, j);
+            tmp += eigenVector[j] * A(i, j);
         }
+
+        eigenValue = eigenVector[i] * tmp;
     }
 
-    eigenValue /= std::pow(norm(eigenVector), 2);
+    eigenValue /= std::sqrt(length);
 
     return std::pair<double, std::vector<double>>(eigenValue, eigenVector);
 }

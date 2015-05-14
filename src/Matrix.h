@@ -1,9 +1,5 @@
-//
-// Created by Julian Bayardo on 4/25/15.
-//
-
-#ifndef TP2_MATRIX_H
-#define TP2_MATRIX_H
+#ifndef METNUM_TP2_MATRIX_H
+#define METNUM_TP2_MATRIX_H
 
 #include <iostream>
 #include <bitset>
@@ -83,4 +79,4 @@ Matrix operator+(const Matrix &m, const Matrix &n);
 Matrix operator*(const Matrix &m, const double &c);
 Matrix operator*(const Matrix &m, const Matrix &n);
 
-#endif //TP2_MATRIX_H
+#endif //METNUM_TP2_MATRIX_H

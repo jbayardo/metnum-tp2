@@ -1,7 +1,3 @@
-//
-// Created by Julian Bayardo on 5/8/15.
-//
-
 #ifndef METNUM_TP2_LINEARALGEBRA_H
 #define METNUM_TP2_LINEARALGEBRA_H
 
