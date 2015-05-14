@@ -334,35 +334,22 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
     // lo definimos como una fila.
     std::cerr << "Calculando promedio de variables para el training dataset" << std::endl;
     Matrix mean(1, DIM*DIM);
-    Timer PCAMean("PCA Mean Testing Dataset");
+    Timer PCAMean("PCA Mean Training Dataset");
 
     // TODO: Seria util que la propia matriz tenga una funcion que te de el vector promedio. La sumatoria la va generando cada vez que se cambian las filas.
-    for (int i = 0; i < trainingSet.rows(); i++) {
-        for (int j = 0; j < trainingSet.columns(); j++) {
-            mean(0,j) += trainingSet(i,j)/TRAIN_SIZE;
+    for (int j = 0; j < trainingSet.columns(); j++) {
+        for (int i = 0; i < trainingSet.rows(); i++) {
+            mean(0, j) += trainingSet(i, j);
         }
+
+        mean(0, j) /= trainingSet.rows();
     }
 
     PCAMean.stop();
 
-    std::cerr << "Normalizando training dataset" << std::endl;
-    Timer PCASum("PCA Sum Testing Dataset");
-
-    // Debemos generar en la matriz de training lo siguiente en cada fila:
-    // x_i debe ser (x_i - mean)_traspuesto / (sqrt(n-1))
-    // para nuestro caso ya estan traspuestas.
-    for (int i = 0; i < trainingSet.rows(); i++) {
-        for (int j = 0; j < trainingSet.columns(); j++) {
-            trainingSet(i,j) -= mean(0, j);
-            trainingSet(i,j) /= sqrt(TRAIN_SIZE-1);
-        }
-    }
-
-    PCASum.stop();
-
     Matrix covariance(trainingSet.columns(), trainingSet.columns());
-
-    std::fstream inCov(path + "covariance.ssv", std::ios_base::in);
+    std::string covFileName = path + "covariance.ssv";
+    std::fstream inCov(covFileName, std::ios_base::in);
 
     if (inCov.good()) {
         std::cerr << "Levantando matriz de covarianza para el training dataset" << std::endl;
@@ -373,23 +360,28 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         Timer PCACov("PCA Covariance Testing Dataset");
 
         // TODO: hacemos dos veces la diagonal
-        for (int i = 0; i < covariance.columns(); i++) {
-            if (i % 10 == 0) {
-                std::cout << "Progreso: " << i << std::endl;
+        for (int j = 0; j < covariance.columns(); j++) {
+            if (j % 10 == 0) {
+                std::cerr << "Progreso: " << j << "/" << covariance.columns() << std::endl;
             }
 
-            for (int j = 0; j <= i; j++) {
-                // j es la columna de X_t, que resulta ser la fila j-esima de X
-                for (int k = 0; k < trainingSet.rows(); k++) {
-                    covariance(i, j) += trainingSet(k, j) * trainingSet(k, i);
-                    covariance(j, i) = covariance(i, j);
+            double m1 = mean(0, j);
+
+            for (int k = 0; k <= j; k++) {
+                double m2 = mean(0, k);
+
+                for (int i = 0; i < trainingSet.rows(); i++) {
+                    covariance(j, k) += (trainingSet(i, j) - m1) * (trainingSet(i, k) - m2);
                 }
+
+                covariance(j, k) /= (trainingSet.rows() - 1 );
+                covariance(k, j) = covariance(j, k);
             }
         }
 
         PCACov.stop();
 
-        std::fstream outCov(path + "covariance.ssv", std::ios_base::out);
+        std::fstream outCov(covFileName, std::ios_base::out);
 
         if (outCov.good()) {
             std::cerr << "Guardando matriz de covarianza para el training dataset" << std::endl;
