@@ -3,7 +3,7 @@
 #include "Counter.h"
 
 std::vector<double> operator*(const Matrix &m, const std::vector<double> &n) {
-    if (n.size() < m.columns()) {
+    if (m.columns() > n.size()) {
         std::stringstream fmt;
         fmt << "Tamaño de matriz M es " << m.columns() << ", mientras que vector n es " << n.size();
         throw new std::out_of_range(fmt.str());

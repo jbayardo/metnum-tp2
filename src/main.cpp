@@ -20,11 +20,13 @@ typedef enum {
  * Devuelve un número del 0 al 9 que representa el dígito reconocido
  */
 Label kNN(int k, const Matrix &trainingSet, const std::vector<Label> &trainingLabels, Matrix &evSet, int i1, const DistanceF &f) {
-    Timer timer("kNN Timer");
+    //Timer timer("kNN Timer");
     min_queue<std::pair<double, Label>> distances;
 
     for (int i = 0; i < trainingSet.rows(); ++i) {
-        distances.push(std::pair<double, Label>(f(trainingSet, i, evSet, i1), trainingLabels[i]));
+        double dist = f(trainingSet, i, evSet, i1);
+        double lbl = trainingLabels[i];
+        distances.push(std::make_pair(dist, lbl));
     }
     
     int i = 0;
@@ -89,7 +91,7 @@ void loadTrainingSet(std::string path, Matrix &trainingSet, std::vector<Label> &
             std::string::size_type cur = line.find_first_of(',', prev + 1);
 
             if (cur != std::string::npos) {
-                trainingSet(l, i) = std::stod(line.substr(prev + 1, cur));
+                trainingSet(l, i) = std::stod(line.substr(prev + 1, cur-(prev+1)));
             }
 
             prev = cur;
@@ -132,7 +134,7 @@ void loadTestingSet(std::string path, Matrix &testingSet) {
             std::string::size_type cur = line.find_first_of(',', prev + 1);
 
             if (cur != std::string::npos) {
-                testingSet(l, i) = std::stod(line.substr(prev + 1, cur));
+                testingSet(l, i) = std::stod(line.substr(prev + 1, cur-(prev+1)));
             }
 
             prev = cur;
@@ -154,7 +156,7 @@ template <std::size_t K>
 std::pair<Matrix, std::vector<Label>> filterDataset(const Matrix &A, const std::vector<Label> &labels, const std::bitset<K> &filter) {
     Timer timer("Filter Dataset Timer");
 
-    if (K < labels.size()) {
+    if (K < labels.size() || filter.count() <= 1) {
         std::stringstream fmt;
         fmt << "Filtro para el dataset tiene tamaño " << K << " cuando el dataset tiene tamaño " << labels.size();
         throw new std::invalid_argument(fmt.str());
@@ -164,13 +166,9 @@ std::pair<Matrix, std::vector<Label>> filterDataset(const Matrix &A, const std::
     int last = 0;
 
     for (int i = 0; i < A.rows(); ++i) {
-        if (filter[i]) {
+        if (filter.test((std::size_t) i)) {
             output[last] = labels[i];
             last++;
-        }
-
-        if (last > filter.count()) {
-            break;
         }
     }
 
@@ -309,6 +307,8 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         Counter miss("kNN Miss");
         Timer kNNPartitionTimer("kNN Partition Timer");
 
+        std::cerr << "Corriendo kNN" << std::endl;
+
         for (int i = 0; i < testChangeBasis.rows(); ++i) {
             Label l = kNN(neighbours, trainChangeBasis, fTest.second, testChangeBasis, i, L2);
 
@@ -316,6 +316,10 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
                 ++hit;
             } else {
                 ++miss;
+            }
+
+            if (i % 100 == 0) {
+                std::cerr << "Progreso: " << i << "/" << testChangeBasis.rows() << std::endl;
             }
         }
     }
@@ -342,6 +346,10 @@ void NORMALKNN(int neighbours, int tests, std::vector<std::bitset<TRAIN_SIZE>> &
                 ++hit;
             } else {
                 ++miss;
+            }
+
+            if (i % 100 == 0) {
+                std::cerr << "Progreso: " << i << "/" << fTest.first.rows() << std::endl;
             }
         }
     }
@@ -423,7 +431,7 @@ int main(int argc, char *argv[]) {
 
     Timer timer("Output Dataset Timer");
 
-    std::fstream output(path + "clasification.csv", std::ios_base::out);
+    std::fstream output(path + "clasification" + basename(std::string(argv[2])), std::ios_base::out);
     output << "ImageId,Label" << std::endl;
 
     for (int i = 0; i < predictions.size(); ++i) {
@@ -433,7 +441,7 @@ int main(int argc, char *argv[]) {
     output.close();
     timer.stop();
 
-    Logger::getInstance().dump("times.txt");
+    Logger::getInstance().dump(path + "statistics" + basename(std::string(argv[2])));
 
     return 0;
 }

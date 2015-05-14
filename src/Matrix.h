@@ -37,9 +37,9 @@ public:
 
         int last = 0;
 
-        for (int i = 0; i < this->rows(); ++i) {
-            if (filter.test((std::size_t)i)) {
-                this->matrix[last] = m.matrix[i];
+        for (int i = 0; i < m.rows(); ++i) {
+            if (filter.test((std::size_t) i)) {
+                std::copy(m.matrix[i].begin(), m.matrix[i].begin() + m.columns(), this->matrix[last].begin());
                 last++;
             }
         }
