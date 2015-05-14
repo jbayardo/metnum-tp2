@@ -285,8 +285,6 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         // segun diapositivas de la clase.
         Timer PCANormalizeTesting("PCA Normalize Testing");
 
-        size = std::sqrt(fTest.first.rows()-1);
-
         for (int i = 0; i < fTest.first.rows(); i++) {
             for (int j = 0; j < fTest.first.columns(); j++) {
                 fTest.first(i, j) -= mean(0, j);

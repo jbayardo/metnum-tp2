@@ -160,21 +160,18 @@ std::list<EigenPair> decompose(Matrix deflated, int k, const Norm &norm, unsigne
  * @param l lista de EigenPair
  */
 
-void dimensionReduction(const Matrix& src, Matrix& dst, const std::list<EigenPair>& l)
-{
-    // contador de EigenPair
+void dimensionReduction(const Matrix& src, Matrix& dst, const std::list<EigenPair>& l) {
     int c = 0;
-    // ASUMO QUE LO RECORRE EN ORDEN!
-    for (const EigenPair& ep : l)
-    {
+
+    for (const EigenPair &ep : l) {
         const std::vector<double>& eigenVector = ep.second;
 
-        // 
-        for (int i = 0; i < src.rows(); i++)
-        {   
+        for (int i = 0; i < src.rows(); i++) {
             double sum = 0.0;
-            for (int j = 0; j < src.columns(); j++)
+
+            for (int j = 0; j < src.columns(); j++) {
                 sum += eigenVector[j] * src(i,j);
+            }
 
             // los guardamos en fila, asi reutilizamos otros metodos.
             dst(i,c) = sum;
