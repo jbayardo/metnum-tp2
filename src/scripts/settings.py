@@ -14,5 +14,5 @@ compiler = 'g++'
 executable = './tp' if os.name == 'posix' else 'tp.exe'
 
 # Parametros extra
-extraParams = []
+extraParams = ['1']
 

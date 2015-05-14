@@ -46,7 +46,13 @@ const DistanceF L2 = DistanceF([](const Matrix &A, int i0, const Matrix &B, int 
 });
 
 const Norm N2 = Norm([](const std::vector<double> &v) -> double {
-    return std::sqrt(std::inner_product(v.begin(), v.end(), v.begin(), 0.0));
+    double output = 0.0;
+
+    for (int i = 0; i < v.size(); ++i) {
+        output += v[i]*v[i];
+    }
+
+    return std::sqrt(output);
 });
 
 #endif //METNUM_TP2_LINEARALGEBRA_H

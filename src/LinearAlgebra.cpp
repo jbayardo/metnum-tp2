@@ -13,16 +13,12 @@ std::vector<double> operator*(const Matrix &m, const std::vector<double> &n) {
         throw new std::out_of_range(fmt.str());
     }
 
-    std::vector<double> output(m.rows());
+    std::vector<double> output(m.rows(), 0.0);
 
     for (int i = 0; i < m.rows(); ++i) {
-        double tmp = 0.0;
-
         for (int j = 0; j < m.columns(); ++j) {
-            tmp += m(i, j) * n[j];
+            output[i] += m(i, j) * n[j];
         }
-
-        output[i] = tmp;
     }
 
     return output;
@@ -47,7 +43,12 @@ EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const
 
     Timer timer("Power Iteration Timer");
     Counter iteration("Power Iteration Iteration Counter");
+
     double length = norm(eigenVector);
+
+    for (int j = 0; j < eigenVector.size(); ++j) {
+        eigenVector[j] /= length;
+    }
 
     // Verificamos convergencia
     while (iteration < iterations) {
@@ -57,15 +58,20 @@ EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const
         // Normalizamos el vector
         length = norm(eigenVector);
 
-        std::transform(eigenVector.begin(), eigenVector.end(), eigenVector.begin(), [length](const double &x) -> double {
-            return x / length;
-        });
+        for (int j = 0; j < A.rows(); ++j) {
+            eigenVector[j] /= length;
+        }
 
         // Actualizamos el contador
         ++iteration;
     }
 
     double eigenValue = 0.0;
+    /*std::vector<double> outfuck(A*eigenVector);
+
+    for (int i = 0; i < outfuck.size(); ++i) {
+        eigenValue += outfuck[i] * outfuck[i];
+    }*/
 
     for (int i = 0; i < A.rows(); ++i) {
         for (int j = 0; j < A.rows(); ++j) {
@@ -73,7 +79,7 @@ EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const
         }
     }
 
-    eigenValue /= length;
+    eigenValue /= std::pow(norm(eigenVector), 2);
 
     return std::pair<double, std::vector<double>>(eigenValue, eigenVector);
 }
@@ -117,18 +123,32 @@ std::list<EigenPair> decompose(Matrix deflated, int k, const Norm &norm, unsigne
     Timer timer("Decompose Timer");
     std::list<EigenPair> output;
     // Vector inicial para esta iteracion
-    // TODO: no ser boludos.
-    std::vector<double> x0((unsigned long) deflated.columns(), 1.0);
+    std::vector<double> x0((unsigned long) deflated.columns(), 0.0);
 
     for (int i = 0; i < k; ++i) {
+        for (int i = 0; i < deflated.columns(); ++i) {
+            x0[i] = random() % 1337 + 1;
+        }
+
         // Obtenemos el i-esimo eigenpair dominante
         EigenPair dominant = powerIteration(deflated, x0, norm, iterations);
 
-        // Hacemos deflacion, para el proximo paso
-        deflation(deflated, dominant);
+        if (dominant.first != dominant.first) {
+            std::cerr << "Error sacando el autovalor " << i << ". Vector: " << std::endl;
 
-        // Lo guardamos al final de la lista
-        output.push_back(dominant);
+            for (int i = 0; i < deflated.columns(); ++i) {
+                std::cerr << x0[i] << " ";
+            }
+
+            std::cerr << std::endl;
+            --i;
+        } else {
+            // Hacemos deflacion, para el proximo paso
+            deflation(deflated, dominant);
+
+            // Lo guardamos al final de la lista
+            output.push_back(dominant);
+        }
     }
 
     return output;

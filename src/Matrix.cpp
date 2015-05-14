@@ -11,7 +11,7 @@ Matrix::Matrix(const Matrix &m) : N(m.rows()), M(m.columns()), matrix(m.matrix) 
 
 Matrix::Matrix(int N, int M)
         : N(N), M(M), matrix(N, std::vector<double>(M, 0.0)) {
-    if (this->rows() <= 0 || this->columns() <= 0) {
+    if (this->rows() < 0 || this->columns() < 0) {
         throw new std::out_of_range("Invalid matrix dimension");
     }
 
