@@ -204,7 +204,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         }
 
         for (int j = 0; j < mean.columns();j++)
-            mean(0,j) /= fTrain.first.rows()
+            mean(0,j) /= fTrain.first.rows();
 
 
         PCAMean.stop();
@@ -214,7 +214,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         for (int j = 0; j < fTrain.first.columns(); ++j) {
             for (int i = 0; i < fTrain.first.rows(); ++i) {
                 fTrain.first(i, j) -= mean(0, j);
-                fTrain.first(i, j) /= sqrt(fTrain.rows()-1);
+                fTrain.first(i, j) /= sqrt(fTrain.first.rows()-1);
             }
         }
 
@@ -290,7 +290,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         for (int i = 0; i < fTest.first.rows(); i++) {
             for (int j = 0; j < fTest.first.columns(); j++) {
                 fTest.first(i, j) -= mean(0, j);
-                fTest.first(i, j) /= std::sqrt(fTrain.rows()-1);
+                fTest.first(i, j) /= std::sqrt(fTrain.first.rows()-1);
             }
         }
 
