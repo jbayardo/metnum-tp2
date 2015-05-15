@@ -196,27 +196,25 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
 
         Timer PCAMean("PCA Mean Training");
 
-        double size = fTrain.first.rows();
-
-        for (int j = 0; j < fTrain.first.columns(); j++) {
-            for (int i = 0; i < fTrain.first.rows(); i++) {
-                mean(0, j) += fTrain.first(i, j);
+        // TODO: Seria util que la propia matriz tenga una funcion que te de el vector promedio. La sumatoria la va generando cada vez que se cambian las filas.
+        for (int i = 0; i < fTrain.first.rows(); i++) {
+            for (int j = 0; j < fTrain.first.columns(); j++) {
+                mean(0,j) += fTrain.first(i,j);
             }
-
-            mean(0, j) /= size;
         }
+
+        for (int j = 0; j < mean.columns();j++)
+            mean(0,j) /= fTrain.first.rows()
+
 
         PCAMean.stop();
 
         Timer PCANormalizeTraining("PCA Normalize Training");
 
-        size -= 1;
-        size = std::sqrt(size);
-
         for (int j = 0; j < fTrain.first.columns(); ++j) {
             for (int i = 0; i < fTrain.first.rows(); ++i) {
                 fTrain.first(i, j) -= mean(0, j);
-                fTrain.first(i, j) /= size;
+                fTrain.first(i, j) /= sqrt(fTrain.rows()-1);
             }
         }
 
@@ -234,17 +232,17 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
             std::cerr << "Calculando matriz de covarianza la partición " << k << " training dataset" << std::endl;
             Timer PCACov("PCA Covariance Training");
 
-            for (int j = 0; j < covariance.columns(); j++) {
-                if (j % 10 == 0) {
-                    std::cerr << "Progreso: " << j << "/" << covariance.columns() << std::endl;
+            for (int i = 0; i < covariance.columns(); i++) {
+                if (i % 10 == 0) {
+                    std::cerr << "Progreso: " << i << "/" << covariance.columns() << std::endl;
                 }
 
-                for (int l = 0; l <= j; l++) {
-                    for (int i = 0; i < fTrain.first.rows(); i++) {
-                        covariance(j, l) += fTrain.first(i, j) * fTrain.first(i, l);
+                for (int j = 0; j <= i; j++) {
+                    // j es la columna de X_t, que resulta ser la fila j-esima de X
+                    for (int k = 0; k < fTrain.first.rows(); k++) {
+                        covariance(i, j) += fTrain.first(k, i) * fTrain.first(k, j);
                     }
-
-                    covariance(l, j) = covariance(j, l);
+                    covariance(j, i) = covariance(i, j);
                 }
             }
 
@@ -292,7 +290,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         for (int i = 0; i < fTest.first.rows(); i++) {
             for (int j = 0; j < fTest.first.columns(); j++) {
                 fTest.first(i, j) -= mean(0, j);
-                fTest.first(i, j) /= size;
+                fTest.first(i, j) /= std::sqrt(fTrain.rows()-1);
             }
         }
 
@@ -324,7 +322,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         }
     }
 
-    Matrix mean(1, DIM*DIM);
+    /*Matrix mean(1, DIM*DIM);
 
     Timer PCAMean("PCA Mean Training");
 
@@ -448,7 +446,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         if (i % 100 == 0) {
             std::cerr << "Progreso: " << i << "/" << testChangeBasis.rows() << std::endl;
         }
-    }
+    }*/
 }
 
 void NORMALKNN(int neighbours, int tests, std::vector<std::bitset<TRAIN_SIZE>> &masks,
