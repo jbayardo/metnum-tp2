@@ -194,7 +194,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
 
         Matrix mean(1, DIM*DIM);
 
-        Timer PCAMean("PCA Mean Training");
+        Timer PCAMean("PCA Mean CV");
 
         // TODO: Seria util que la propia matriz tenga una funcion que te de el vector promedio. La sumatoria la va generando cada vez que se cambian las filas.
         for (int i = 0; i < fTrain.first.rows(); i++) {
@@ -209,7 +209,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
 
         PCAMean.stop();
 
-        Timer PCANormalizeTraining("PCA Normalize Training");
+        Timer PCANormalizeTraining("PCA Normalize CV");
 
         for (int j = 0; j < fTrain.first.columns(); ++j) {
             for (int i = 0; i < fTrain.first.rows(); ++i) {
@@ -230,11 +230,11 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
             inCov.close();
         } else {
             std::cerr << "Calculando matriz de covarianza la partición " << k << " training dataset" << std::endl;
-            Timer PCACov("PCA Covariance Training");
+            Timer PCACov("PCA Covariance CV");
 
             for (int i = 0; i < covariance.columns(); i++) {
                 if (i % 10 == 0) {
-                    std::cerr << "Progreso: " << i << "/" << covariance.columns() << std::endl;
+                    std::cerr << "Progreso: " << i << "/" << covariance.columns() << '\r';
                 }
 
                 for (int j = 0; j <= i; j++) {
@@ -245,6 +245,8 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
                     covariance(j, i) = covariance(i, j);
                 }
             }
+
+            std::cerr << std::endl;
 
             PCACov.stop();
 
@@ -259,6 +261,8 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
             }
         }
 
+        std::cerr << "Calculando los autovalores de la matriz de covarianzas" << std::endl;
+
         // Obtenemos los autovalores y autovectores de la matriz de covarianzas
         std::list<EigenPair> eigenPair = decompose(covariance, alpha, N2, 1000);
 
@@ -269,7 +273,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
             eigenvalues.precision(10);
 
             for (const EigenPair& ep : eigenPair) {
-                eigenvalues << ep.first << std::endl;
+                eigenvalues << std::sqrt(ep.first) << std::endl;
             }
 
             eigenvalues.close();
@@ -285,7 +289,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
 
         // a cada imagen del testing set debemos restarle mean y dividirlos por sqrt(fTrain.first.rows()-1)
         // segun diapositivas de la clase.
-        Timer PCANormalizeTesting("PCA Normalize Testing");
+        Timer PCANormalizeTesting("PCA Normalize Testing CV");
 
         for (int i = 0; i < fTest.first.rows(); i++) {
             for (int j = 0; j < fTest.first.columns(); j++) {
@@ -301,9 +305,9 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         dimensionReduction(fTest.first, testChangeBasis, eigenPair);
 
         // ya tenemos los vectores en sus respectivos cambios de bases
-        Counter hit("kNN Hit");
-        Counter miss("kNN Miss");
-        Timer kNNPartitionTimer("kNN Partition Timer");
+        Counter hit("kNN Hit CV");
+        Counter miss("kNN Miss CV");
+        Timer kNNPartitionTimer("kNN Partition Timer CV");
 
         std::cerr << "Corriendo kNN" << std::endl;
 
@@ -317,14 +321,16 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
             }
 
             if (i % 100 == 0) {
-                std::cerr << "Progreso: " << i << "/" << testChangeBasis.rows() << std::endl;
+                std::cerr << "Progreso: " << i << "/" << testChangeBasis.rows() << '\r';
             }
         }
+
+        std::cerr << std::endl;
     }
 
     Matrix mean(1, DIM*DIM);
 
-    Timer PCAMean("PCA Mean Training");
+    Timer PCAMean("PCA Mean");
 
     for (int i = 0; i < trainingSet.rows(); i++) {
         for (int j = 0; j < trainingSet.columns(); j++) {
@@ -360,7 +366,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         inCov.close();
     } else {
         std::cerr << "Calculando matriz de covarianza del training dataset" << std::endl;
-        Timer PCACov("PCA Covariance Training");
+        Timer PCACov("PCA Covariance");
 
         for (int i = 0; i < covariance.columns(); i++) {
             if (i % 10 == 0) {
@@ -389,6 +395,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         }
     }
 
+    std::cerr << "Calculando los autovalores de la matriz de covarianzas" << std::endl;
     // Obtenemos los autovalores y autovectores de la matriz de covarianzas
     std::list<EigenPair> eigenPair = decompose(covariance, alpha, N2, 1000);
 
@@ -399,7 +406,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         eigenvalues.precision(10);
 
         for (const EigenPair& ep : eigenPair) {
-            eigenvalues << ep.first << std::endl;
+            eigenvalues << std::sqrt(ep.first) << std::endl;
         }
 
         eigenvalues.close();
@@ -433,7 +440,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
     // ya tenemos los vectores en sus respectivos cambios de bases
     Counter hit("kNN Hit");
     Counter miss("kNN Miss");
-    Timer kNNPartitionTimer("kNN Partition Timer");
+    Timer kNNPartitionTimer("kNN Testing Timer");
 
     std::cerr << "Corriendo kNN" << std::endl;
 
