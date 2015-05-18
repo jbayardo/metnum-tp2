@@ -50,6 +50,8 @@ EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const
     // Verificamos convergencia
     while (iteration < iterations) {
         // Elevamos a potencia
+        std::vector<double> temp(eigenVector); // realizamos la copia para luego calcular un delta.
+
         eigenVector = A * eigenVector;
 
         // Normalizamos el vector
@@ -59,8 +61,15 @@ EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const
             eigenVector[j] /= length;
         }
 
+
         // Actualizamos el contador
         ++iteration;
+
+        // Verificamos si estamos convergiendo.
+        for (int j=0; j < A.rows(); j++)
+            temp[j] -= eigenVector[j];
+        if (norm(temp) < 0.001)
+            break;
     }
 
     double eigenValue = 0.0;

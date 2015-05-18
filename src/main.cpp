@@ -8,6 +8,7 @@
 #define DIM 28
 #define TRAIN_SIZE 42000
 #define TEST_SIZE 28000
+#define MAX_ITERATIONS 2000 // tolerancia de iteraciones para el metodo de la potencia
 
 typedef double Label;
 
@@ -264,7 +265,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         std::cerr << "Calculando los autovalores de la matriz de covarianzas" << std::endl;
 
         // Obtenemos los autovalores y autovectores de la matriz de covarianzas
-        std::list<EigenPair> eigenPair = decompose(covariance, alpha, N2, 1000);
+        std::list<EigenPair> eigenPair = decompose(covariance, alpha, N2, MAX_ITERATIONS);
 
         std::fstream eigenvalues(output, std::ios_base::out | std::ios_base::app);
 
@@ -397,7 +398,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
 
     std::cerr << "Calculando los autovalores de la matriz de covarianzas" << std::endl;
     // Obtenemos los autovalores y autovectores de la matriz de covarianzas
-    std::list<EigenPair> eigenPair = decompose(covariance, alpha, N2, 1000);
+    std::list<EigenPair> eigenPair = decompose(covariance, alpha, N2, MAX_ITERATIONS);
 
     std::fstream eigenvalues(output, std::ios_base::out | std::ios_base::app);
 
