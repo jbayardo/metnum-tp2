@@ -68,7 +68,7 @@ EigenPair powerIteration(const Matrix &A, std::vector<double> eigenVector, const
         // Verificamos si estamos convergiendo.
         for (int j=0; j < A.rows(); j++)
             temp[j] -= eigenVector[j];
-        if (norm(temp) < 0.001)
+        if (norm(temp) < POWER_ITERATION_DELTA)
             break;
     }
 
