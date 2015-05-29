@@ -243,6 +243,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
                     for (int k = 0; k < fTrain.first.rows(); k++) {
                         covariance(i, j) += fTrain.first(k, i) * fTrain.first(k, j);
                     }
+
                     covariance(j, i) = covariance(i, j);
                 }
             }

@@ -59,8 +59,26 @@ public:
         return this->M;
     }
 
-    double &operator()(const int &i, const int &j);
-    const double & operator()(const int &i, const int &j) const;
+    inline double &operator()(const int &i, const int &j) {
+        #ifdef DEBUG
+        if (0 > i || 0 > j || i >= this->rows() || j >= this->columns()) {
+            throw new std::out_of_range("Index access out of range");
+        }
+        #endif
+
+        return this->matrix[i][j];
+    }
+
+    inline const double &operator()(const int &i, const int &j) const {
+        #ifdef DEBUG
+        if (0 > i || 0 > j || i >= this->rows() || j >= this->columns()) {
+            throw new std::out_of_range("Index access out of range");
+        }
+        #endif
+
+        return this->matrix[i][j];
+    }
+
     Matrix & operator=(const Matrix &m);
     bool operator==(const Matrix &m) const;
     bool operator!=(const Matrix &m) const;

@@ -18,22 +18,6 @@ Matrix::Matrix(int N, int M)
     }
 }
 
-double &Matrix::operator()(const int &i, const int &j) {
-    if (0 > i || 0 > j || i >= this->rows() || j >= this->columns()) {
-        throw new std::out_of_range("Index access out of range");
-    }
-
-    return this->matrix[i][j];
-}
-
-const double &Matrix::operator()(const int &i, const int &j) const {
-    if (0 > i || 0 > j || i >= this->rows() || j >= this->columns()) {
-        throw new std::out_of_range("Index access out of range");
-    }
-
-    return this->matrix[i][j];
-}
-
 Matrix &Matrix::operator=(const Matrix &m) {
     if (*this != m) {
         // Poner información de la representación interna
