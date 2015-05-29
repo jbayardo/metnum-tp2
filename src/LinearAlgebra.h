@@ -11,6 +11,7 @@
 #include <sstream>
 #include "Matrix.h"
 
+#define POWER_ITERATION_DELTA 0.0001
 template <typename T>
 using min_queue = std::priority_queue<T, std::vector<T>, std::greater<T>>;
 // Matriz de datos, vector, número de línea.
