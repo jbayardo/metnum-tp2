@@ -499,7 +499,7 @@ void NORMALKNN(int neighbours, int tests, std::vector<std::bitset<TRAIN_SIZE>> &
     }
 }
 
-std::string basename(std::string const& pathname) {
+std::string basename(const std::string &pathname) {
     return std::string(std::find_if( pathname.rbegin(), pathname.rend(), [](char ch) -> bool { return ch == '/'; }).base(), pathname.end());
 }
 
