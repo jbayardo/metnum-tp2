@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/bin/python2
 
 from scripts.fabricate import *
 from scripts.settings import *
@@ -12,7 +12,7 @@ def build():
 
 def compile():
   for source in sources:
-    run(compiler, '-c', '-std=c++11', '-ggdb', source+'.cpp', '-o', source+'.o')
+    run(compiler, '-c', '-std=c++11', '-Ofast', '-pedantic', '-Wall', source+'.cpp', '-o', source+'.o')
 
 def link():
   objects = [s+'.o' for s in sources]

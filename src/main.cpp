@@ -309,6 +309,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         // ya tenemos los vectores en sus respectivos cambios de bases
         Counter hit("kNN Hit CV");
         Counter miss("kNN Miss CV");
+        Counter total("kNN Total CV");
         Timer kNNPartitionTimer("kNN Partition Timer CV");
 
         std::cerr << "Corriendo kNN" << std::endl;
@@ -321,6 +322,8 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
             } else {
                 ++miss;
             }
+
+            ++total;
 
             if (i % 100 == 0) {
                 std::cerr << "Progreso: " << i << "/" << testChangeBasis.rows() << '\r';
@@ -439,9 +442,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
     Matrix testChangeBasis(testingSet.rows(), alpha);
     dimensionReduction(testingSet, testChangeBasis, eigenPair);
 
-    // ya tenemos los vectores en sus respectivos cambios de bases
-    Counter hit("kNN Hit");
-    Counter miss("kNN Miss");
+    Counter total("kNN Total");
     Timer kNNPartitionTimer("kNN Testing Timer");
 
     std::cerr << "Corriendo kNN" << std::endl;
@@ -450,10 +451,14 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
         Label l = kNN(neighbours, trainChangeBasis, trainingLabels, testChangeBasis, i, L2);
         predictions[i] = l;
 
+        ++total;
+
         if (i % 100 == 0) {
-            std::cerr << "Progreso: " << i << "/" << testChangeBasis.rows() << std::endl;
+            std::cerr << "Progreso: " << i << "/" << testChangeBasis.rows() << '\r';
         }
     }
+
+    std::cerr << std::endl;
 }
 
 void NORMALKNN(int neighbours, int tests, std::vector<std::bitset<TRAIN_SIZE>> &masks,
@@ -462,12 +467,19 @@ void NORMALKNN(int neighbours, int tests, std::vector<std::bitset<TRAIN_SIZE>> &
 
     for (int k = 0; k < tests; ++k) {
         std::cerr << "Procesando partición " << k << std::endl;
+
         std::pair<Matrix, std::vector<Label>> fTrain = filterDataset(trainingSet, trainingLabels, masks[k]);
+        std::cerr << "Casos de train: " << masks[k].count() << std::endl;
+        std::cerr << "Casos de train concretos: " << fTrain.first.rows() << std::endl;
+
         masks[k].flip();
         std::pair<Matrix, std::vector<Label>> fTest = filterDataset(trainingSet, trainingLabels, masks[k]);
+        std::cerr << "Casos de test: " << masks[k].count() << std::endl;
+        std::cerr << "Casos de test concretos: " << fTest.first.rows() << std::endl;
 
-        Counter hit("kNN Hit");
-        Counter miss("kNN Miss");
+        Counter hit("kNN Hit CV");
+        Counter miss("kNN Miss CV");
+        Counter total("kNN Total CV");
         Timer kNNPartitionTimer("kNN Partition Timer");
 
         for (int i = 0; i < fTest.first.rows(); ++i) {
@@ -479,10 +491,14 @@ void NORMALKNN(int neighbours, int tests, std::vector<std::bitset<TRAIN_SIZE>> &
                 ++miss;
             }
 
+            ++total;
+
             if (i % 100 == 0) {
-                std::cerr << "Progreso: " << i << "/" << fTest.first.rows() << std::endl;
+                std::cerr << "Progreso: " << i << "/" << fTest.first.rows() << '\r';
             }
         }
+
+        std::cerr << std::endl;
     }
 
     std::cerr << "Comenzando kNN para el testing dataset" << std::endl;
@@ -494,9 +510,11 @@ void NORMALKNN(int neighbours, int tests, std::vector<std::bitset<TRAIN_SIZE>> &
         predictions[i] = l;
 
         if (i % 100 == 0) {
-            std::cerr << "Progreso de kNN sobre el testing dataset: " << i << "/" << testingSet.rows() << std::endl;
+            std::cerr << "Progreso: " << i << "/" << testingSet.rows() << '\r';
         }
     }
+
+    std::cerr << std::endl;
 }
 
 std::string basename(const std::string &pathname) {
