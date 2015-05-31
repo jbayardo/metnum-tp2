@@ -243,6 +243,7 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
                     for (int k = 0; k < fTrain.first.rows(); k++) {
                         covariance(i, j) += fTrain.first(k, i) * fTrain.first(k, j);
                     }
+
                     covariance(j, i) = covariance(i, j);
                 }
             }
@@ -498,7 +499,7 @@ void NORMALKNN(int neighbours, int tests, std::vector<std::bitset<TRAIN_SIZE>> &
     }
 }
 
-std::string basename(std::string const& pathname) {
+std::string basename(const std::string &pathname) {
     return std::string(std::find_if( pathname.rbegin(), pathname.rend(), [](char ch) -> bool { return ch == '/'; }).base(), pathname.end());
 }
 
