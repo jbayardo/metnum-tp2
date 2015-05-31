@@ -40,7 +40,7 @@ Label kNN(int k, const Matrix &trainingSet, const std::vector<Label> &trainingLa
     int maximum = 0;
 
     for (int j = 0; j < 10; ++j) {
-        if (labels[j] > maximum) {
+        if (labels[j] > labels[maximum]) {
             maximum = j;
         }
     }
