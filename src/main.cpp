@@ -272,16 +272,16 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
 
         if (eigenvalues.good()) {
             std::cerr << "Guardando autovalores para los test." << std::endl;
-            eigenvalues.precision(10);
+            eigenvalues.precision(6);
 
             for (const EigenPair& ep : eigenPair) {
-                eigenvalues << std::sqrt(ep.first) << std::endl;
+                eigenvalues << std::scientific << std::sqrt(ep.first) << std::endl;
             }
 
             eigenvalues.close();
         } else {
             std::cerr << "Error guardando los autovalores, siguiendo igualmente" << std::endl;
-            std::cerr << "ALERTA: LOS NO VAN A PASAR" << std::endl;
+            std::cerr << "ALERTA: LOS TESTS NO VAN A PASAR" << std::endl;
         }
 
         std::cerr << "Haciendo cambio de base para el training dataset" << std::endl;
@@ -408,16 +408,16 @@ void PCAKNN(std::string path, std::string output, std::string append, int alpha,
 
     if (eigenvalues.good()) {
         std::cerr << "Guardando autovalores para los test." << std::endl;
-        eigenvalues.precision(10);
+        eigenvalues.precision(6);
 
         for (const EigenPair& ep : eigenPair) {
-            eigenvalues << std::sqrt(ep.first) << std::endl;
+            eigenvalues << std::scientific << std::sqrt(ep.first) << std::endl;
         }
 
         eigenvalues.close();
     } else {
         std::cerr << "Error guardando los autovalores, siguiendo igualmente" << std::endl;
-        std::cerr << "ALERTA: LOS NO VAN A PASAR" << std::endl;
+        std::cerr << "ALERTA: LOS TESTS NO VAN A PASAR" << std::endl;
     }
 
     std::cerr << "Haciendo cambio de base para el training dataset" << std::endl;
