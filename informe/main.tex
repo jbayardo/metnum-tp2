@@ -140,5 +140,43 @@ A lo largo de este desarrollo hemos planteado distintas hipótesis que pasaremos
   Llegando al final del desarrollo del algoritmo no tuvimos mucho tiempo de realizar experimentos para probar dichas hipótesis planteadas. Aunque las bases teóricas avalen nuestras ideas, sabemos que una mala implementación de los algoritmos planteados puede llegar a traer malos resultados finales que no pudimos corroborar bien.
   
   Nuestra idea de qué puede ser los cálculos de los autovalores o el cálculo de la matriz de covarianza. Viendo esto, igual quisimos probar el hit/miss rate y nos dió un valor de $67\%$
-  
+ 
+
+\section*{Resultados}{}
+
+
+
+\section*{Discusión}{}
+
+WARNING: FASE MUY MUY BETA. YA SÉ QUE ESTÁ ESCRITO CHOTO
+
+Para explicar la elección de los parámetros para kNN debemos primero dar una pequeña introducción para ello calculamos la cantidad de apariciones de cada dígito en el training set y este fue el resultado:
+
+
+% <INSERTAR HISTOGRAMA>
+
+Entonces el dígito 5 tiene el mínimo porcentaje de apariciones siendo aproximadamente $9.03\%$.  Dividimos el training set en 10 particiones aleatorias y disjuntas utilizando MATLAB. Como la división es aleatoria, asumimos que $9.03$ sigue siendo el porcentaje menor de apariciones. 
+
+Por cada corrida del método, se utiliza una partición de 4200 imágenes como testing set, y las restantes 9 particiones como training set.  Entonces para un caso, el nuevo training set contiene 37800 imágenes. El $9.03\%$ de 37800 es un estimativo de la mínima cantidad de apariciones del dígito 5. Es sobre este número que elegimos el k, tomando 7 distintos porcentajes. Trabajar con el mínimo valor de apariciones de un dígito del training set, evita caer en problemas de sobreclasificación.
+
+
+
+Definimos $min$ = $9.03\%$ de 37800. Los k elegidos para la experimentación son: \newline
+\begin{center}
+\begin{tabular}{ l | c }
+ k & Porcentaje de $min$  \\
+1708 & 50\% \\
+854 & 25\% \\
+342 & 10\% \\
+171 & 5\% \\
+68 & 2\% \\
+34 & 1\% \\
+17& 0.5\% \\
+
+\end{tabular}
+\end{center}
+
+
+
+Para la experimentación de PCA, variamos tanto el k como el alpha. Como k elegimos los tres que dieron menor miss rate para kNN, y como alpha tomamos 7 porcentajes del tamaño de la imagen. Nuestra hipótesis consistía en ver que para alphas muy grandes, el tiempo de cómputo fuera considerable y que el miss rate fuera bajo. En cambio, para alphas más chicos, que el tiempo de cómputo fuera bajo, pero también fuese alto el miss rate. Es importante destacar que, si bien la relación entre el alpha y el miss rate es directamente proporcional, grandes variaciones de alpha no se corresponden con grandes variaciones del miss rate. Esto es muy positivo ya que incluso tomando alphas exageradamente chicos el miss rate se mantiene bajo el 20$\%$.
 \end{document}
