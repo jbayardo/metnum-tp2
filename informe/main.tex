@@ -8,6 +8,7 @@
 \usepackage{geometry}
 \usepackage{fixltx2e}
 \usepackage{cite}
+\usepackage{float}
 \geometry{
  a4paper,
  total={210mm,297mm},
@@ -143,6 +144,18 @@ A lo largo de este desarrollo hemos planteado distintas hipótesis que pasaremos
  
 
 \section*{Resultados}{}
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.90]{MissRates.jpg}
+\caption{Comparación de Miss Rate entre métodos.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.90]{preprocesado.jpg}
+\caption{Tiempo de Preprocesado (Eje horizontal superior: k. Eje horizontal inferior: alpha)}
+\end{figure}
+
 
 
 
@@ -152,8 +165,11 @@ WARNING: FASE MUY MUY BETA. YA SÉ QUE ESTÁ ESCRITO CHOTO
 
 Para explicar la elección de los parámetros para kNN debemos primero dar una pequeña introducción para ello calculamos la cantidad de apariciones de cada dígito en el training set y este fue el resultado:
 
-
-% <INSERTAR HISTOGRAMA>
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.80]{histo.jpg}
+\caption{Histograma de labels}
+\end{figure}
 
 Entonces el dígito 5 tiene el mínimo porcentaje de apariciones siendo aproximadamente $9.03\%$.  Dividimos el training set en 10 particiones aleatorias y disjuntas utilizando MATLAB. Como la división es aleatoria, asumimos que $9.03$ sigue siendo el porcentaje menor de apariciones. 
 
