@@ -8,6 +8,7 @@
 \usepackage{geometry}
 \usepackage{fixltx2e}
 \usepackage{cite}
+\usepackage{float}
 \geometry{
  a4paper,
  total={210mm,297mm},
@@ -143,22 +144,48 @@ A lo largo de este desarrollo hemos planteado distintas hipótesis que pasaremos
  
 
 \section*{Resultados}{}
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.90]{MissRatedekNN.jpg}
+\caption{Miss Rate de kNN. Miss Rate en función de k.}
+\label{fig:MissRatekNN}
+\end{figure}
 
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.90]{MissRatedePCA.jpg}
+\caption{Miss Rate de PCA. (Eje horizontal superior: k. Eje horizontal inferior: alpha)}
+\label{fig:MissRatePCA}
+\end{figure}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.90]{preprocesado.jpg}
+\caption{Tiempo de Preprocesado (Eje horizontal superior: k. Eje horizontal inferior: alpha)}
+\label{fig:Preprocesado}
+\end{figure} 
+
+\pagebreak
 
 
 \section*{Discusión}{}
 
-WARNING: FASE MUY MUY BETA. YA SÉ QUE ESTÁ ESCRITO CHOTO
-
-Para explicar la elección de los parámetros para kNN debemos primero dar una pequeña introducción para ello calculamos la cantidad de apariciones de cada dígito en el training set y este fue el resultado:
 
 
-% <INSERTAR HISTOGRAMA>
+\subsection*{Consideraciones para los experimentos.}
+
+Para explicar la elección de los valores de k debemos primero dar una pequeña introducción.  Para ello calculamos la cantidad de apariciones de cada dígito en el training set y este fue el resultado:
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.80]{histo.jpg}
+\caption{Histograma de labels}
+\end{figure}
 
 Entonces el dígito 5 tiene el mínimo porcentaje de apariciones siendo aproximadamente $9.03\%$.  Dividimos el training set en 10 particiones aleatorias y disjuntas utilizando MATLAB. Como la división es aleatoria, asumimos que $9.03$ sigue siendo el porcentaje menor de apariciones. 
 
-Por cada corrida del método, se utiliza una partición de 4200 imágenes como testing set, y las restantes 9 particiones como training set.  Entonces para un caso, el nuevo training set contiene 37800 imágenes. El $9.03\%$ de 37800 es un estimativo de la mínima cantidad de apariciones del dígito 5. Es sobre este número que elegimos el k, tomando 7 distintos porcentajes. Trabajar con el mínimo valor de apariciones de un dígito del training set, evita caer en problemas de sobreclasificación.
-
+Por cada corrida del método, se utiliza una partición de 4200 imágenes como testing set, y las restantes 9 particiones como training set (ejecutando todas las combinaciones).  Entonces para un caso, el nuevo training set contiene 37800 imágenes. El $9.03\%$ de 37800 es un estimativo de la mínima cantidad de apariciones del dígito 5. Es sobre este número que elegimos el k, tomando 7 distintos porcentajes. Trabajar con el mínimo valor de apariciones de un dígito del training set, suponemos que evita caer en problemas de sobreclasificación.
 
 
 Definimos $min$ = $9.03\%$ de 37800. Los k elegidos para la experimentación son: \newline
@@ -175,8 +202,32 @@ Definimos $min$ = $9.03\%$ de 37800. Los k elegidos para la experimentación son
 
 \end{tabular}
 \end{center}
+\\
+
+\subsection*{Resultados kNN-Normal}
+
+La Figura \ref{fig:MissRatekNN} muestra en función de k  los Miss Rate promedio de 10 corridas del método. Para cada una de las 10 corridas, una partición es utilizada como testing set y el resto como training set.
+
+Del gráfico se entiende que el Miss Rate promedio disminuye a medida que el k desciende. Es decir como se obtienen mejores predicciones, al disminuir el k. Los datos obtenidos contradijeron nuestra primera suposición.
+
+Por esa razón, consideramos posible que para la elección de un k óptimo (en este método) no solo se debe tener en cuenta las frecuencias de los dígitos sino también la distancia entre los de un mismo grupo. kNN tiene la particularidad de considerar todos los pixeles de una imagen. En otras palabras, tiene en cuenta también las diferencias entre imágenes de un mismo dígito. Posiblemente considerar solo las frecuencias sea suficiente para el reconocimiento de dígitos escritos por una sola persona. Porque implicaría menor distancia entre imágenes de un mismo dígito.
+
+% FALTA HABLAR DE LOS TIEMPOS
+\subsection*{Resultados PCA}
+
+En la experimentación de PCA, variamos tanto el k como el alpha. Los k elegidos son los tres mejores para kNN. Para alpha tomamos 7 porcentajes del tamaño de la imagen. Nuestra hipótesis consiste que para alphas muy grandes, el tiempo de cómputo es considerable y que el miss rate es bajo. En cambio, para alphas más chicos un tiempo de computo bajo acompañado de una peor tasa de predicción. 
+
+En los gráficos correspondientes a la experimentación con PCA, tuvimos la misma metodología que para kNN-Normal. Usando 10 particiones fuimos considerando cada una como testing set y el resto como training set.
+
+La Figura \ref{fig:MissRatePCA} nos provee los resultados de las corridas del método en cuestión. Para cada k hay una sección propia, determinada por el eje horizontal superior. Dentro de cada una, se observan los distintos Miss Rate promedio (eje vertical) por cada alpha posible (eje horizontal inferior). 
+
+El Miss Rate Promedio se comportó igual para todos los k. Disminuir el alpha implicó mejores predicciones hasta cierto punto. Desde el valor 7 para alpha, la calidad de las predicciones empeora. 
+
+Estos resultados confirmaron parte de nuestra hipótesis: no es necesario trabajar con todas las componentes de las imágenes. Es posible obtener mejores predicciones si uno no trabaja con el total de la imágen. 
+
+Nos hace suponer que el análisis de componentes principales de los vectores nos ayuda a descartar los pixeles que no son cruciales para la diferenciación de dígitos y además concentrarnos en las similitudes entre las imágenes de un mismo dígito. Mejorando el escenario desfavorable de kNN-Normal con imágenes muy distintas para un mismo dígito.
+
+% FALTA HABLAR DE LOS TIEMPOS DE COMPUTO
 
 
-
-Para la experimentación de PCA, variamos tanto el k como el alpha. Como k elegimos los tres que dieron menor miss rate para kNN, y como alpha tomamos 7 porcentajes del tamaño de la imagen. Nuestra hipótesis consistía en ver que para alphas muy grandes, el tiempo de cómputo fuera considerable y que el miss rate fuera bajo. En cambio, para alphas más chicos, que el tiempo de cómputo fuera bajo, pero también fuese alto el miss rate. Es importante destacar que, si bien la relación entre el alpha y el miss rate es directamente proporcional, grandes variaciones de alpha no se corresponden con grandes variaciones del miss rate. Esto es muy positivo ya que incluso tomando alphas exageradamente chicos el miss rate se mantiene bajo el 20$\%$.
 \end{document}
