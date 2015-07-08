@@ -198,9 +198,9 @@ Para explicar la elección de los valores de k debemos primero dar una pequeña 
 \caption{Histograma de labels}
 \end{figure}
 
-Entonces el dígito 5 tiene el mínimo porcentaje de apariciones siendo aproximadamente $9.03\%$.  Dividimos el training set en 10 particiones aleatorias y disjuntas utilizando MATLAB. Como la división es aleatoria, asumimos que $9.03$ sigue siendo el porcentaje menor de apariciones. 
+El dígito 5 tiene el mínimo porcentaje de apariciones siendo este aproximadamente $9.03\%$.  Dividimos el training set en 10 particiones aleatorias y disjuntas utilizando MATLAB. Como la división es aleatoria, asumimos que $9.03$ sigue siendo el porcentaje menor de apariciones para cualquiera de ellas. 
 
-Por cada corrida del método, se utiliza una partición de 4200 imágenes como testing set, y las restantes 9 particiones como training set (ejecutando todas las combinaciones).  Entonces para un caso, el nuevo training set contiene 37800 imágenes. El $9.03\%$ de 37800 es un estimativo de la mínima cantidad de apariciones del dígito 5. Es sobre este número que elegimos el k, tomando 7 distintos porcentajes. Trabajar con el mínimo valor de apariciones de un dígito del training set, suponemos que evita caer en problemas de sobreclasificación.
+Por cada corrida del método, se utiliza una partición de 4200 imágenes como testing set, y las restantes 9 particiones como training set (ejecutando todas las combinaciones).  Entonces para un caso, el nuevo training set contiene 37800 imágenes. El $9.03\%$ de 37800 es un estimativo de la mínima cantidad de apariciones del dígito 5. Es sobre este número que elegimos el k, tomando 7 distintos porcentajes. Creemos que al trabajar con el mínimo valor de apariciones de un dígito del training set, evitamos caer en problemas de sobreclasificación.
 
 
 Definimos $min$ = $9.03\%$ de 37800. Los k elegidos para la experimentación son: \newline
@@ -223,15 +223,15 @@ Definimos $min$ = $9.03\%$ de 37800. Los k elegidos para la experimentación son
 
 La Figura \ref{fig:MissRatekNN} muestra en función de k  los Miss Rate promedio de 10 corridas del método. Para cada una de las 10 corridas, una partición es utilizada como testing set y el resto como training set.
 
-Del gráfico se entiende que el Miss Rate promedio disminuye a medida que el k desciende. Es decir como se obtienen mejores predicciones, al disminuir el k. Los datos obtenidos contradijeron nuestra primera suposición.
+En el gráfico vemos que el Miss Rate promedio disminuye a medida que el k desciende. Es decir, se obtienen mejores predicciones al disminuir el k. Los datos obtenidos contradijeron nuestra primera suposición.
 
-Por esa razón, consideramos posible que para la elección de un k óptimo (en este método) no solo se debe tener en cuenta las frecuencias de los dígitos sino también la distancia entre los de un mismo grupo. kNN tiene la particularidad de considerar todos los pixeles de una imagen. En otras palabras, tiene en cuenta también las diferencias entre imágenes de un mismo dígito. Posiblemente considerar solo las frecuencias sea suficiente para el reconocimiento de dígitos escritos por una sola persona. Porque implicaría menor distancia entre imágenes de un mismo dígito.
+Por esa razón, consideramos posible que para la elección de un k óptimo no sólo se debe tener en cuenta las frecuencias de los dígitos sino también la distancia entre los de un mismo grupo. kNN tiene la particularidad de considerar todos los píxeles de una imagen. En otras palabras, tiene en cuenta también las diferencias entre imágenes de un mismo dígito. Posiblemente considerar sólo las frecuencias sea suficiente para el reconocimiento de dígitos escritos por una sola persona, ya que implicaría menor distancia entre imágenes de un mismo dígito.
 
-Los tiempos promedios para la clasificación son los de la Figura \ref{fig:TiemposkNN}. Esperábamos una mayor diferencia en los tiempos. Esto no ocurrió y nos hace suponer que el mayor tiempo de cálculo es destinado al calculo de distancias entre vectores y no a la cantidad de pops realizados a la cola de prioridad. Esto corroboraría la idea de que distintas normas, podrían ayudar a conseguir un mejor tiempo.
+Los tiempos promedios para la clasificación son los de la Figura \ref{fig:TiempokNN}. Se puede apreciar que los tiempos se mantienen aproximadamente constantes. Esto confirma nuestra hipótesis: el costo más alto en términos de tiempo de cómputo es la comparación entre vectores de gran tamaño, y no tanto la cantidad de elementos a extraer de una cola de prioridad. En otras palabras, la eficiencia de kNN se ve fuertemente limitada por el tamaño de las imágenes a considerar, más que por la cantidad de vecinos elegida.
 
 \subsection*{Resultados PCA}
 
-En la experimentación de PCA, variamos tanto el k como el alpha. Los k elegidos son los tres mejores para kNN. Para alpha tomamos 7 porcentajes del tamaño de la imagen. Nuestra hipótesis consiste que para alphas muy grandes, el tiempo de cómputo es considerable y que el miss rate es bajo. En cambio, para alphas más chicos un tiempo de computo bajo acompañado de una peor tasa de predicción. 
+En la experimentación de PCA, variamos tanto el k como el alpha. Como k elegimos los tres mejores para kNN y como alpha tomamos 7 porcentajes del tamaño de la imagen. Nuestra hipótesis consiste que para alphas muy grandes, el tiempo de cómputo es considerable y que el miss rate es bajo. En cambio, para alphas más chicos un tiempo de computo bajo acompañado de una peor tasa de predicción. 
 
 En los gráficos correspondientes a la experimentación con PCA, tuvimos la misma metodología que para kNN-Normal. Usando 10 particiones fuimos considerando cada una como testing set y el resto como training set.
 
