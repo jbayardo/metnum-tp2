@@ -15097,13 +15097,9 @@
       <size maxheight='500' maxwidth='500' minheight='500' minwidth='500' />
       <zones>
         <zone h='100000' id='2' type='layout-basic' w='100000' x='0' y='0'>
-          <zone h='50000' id='5' param='horz' type='layout-flow' w='100000' x='0' y='50000'>
-            <zone h='50000' id='3' type='layout-basic' w='99200' x='0' y='50000'>
-              <zone h='50000' id='1' name='Miss Rate con PCA' show-title='true' w='99200' x='0' y='50000'>
-              </zone>
-            </zone>
+          <zone h='50000' id='1' name='Miss Rate con PCA' show-title='true' w='100000' x='0' y='50000'>
           </zone>
-          <zone h='50000' id='7' name='Miss Rate de kNN' show-title='true' w='100000' x='0' y='0'>
+          <zone h='50000' id='3' name='Miss Rate de kNN' show-title='true' w='100000' x='0' y='0'>
           </zone>
         </zone>
       </zones>
@@ -15188,17 +15184,12 @@
       <viewpoint>
       </viewpoint>
     </window>
-    <window auto-hidden='0' class='dashboard' maximized='0' name='Miss Rates (Dashboard)'>
+    <window auto-hidden='0' class='dashboard' maximized='1' name='Miss Rates (Dashboard)'>
       <zones>
         <zone name='Miss Rate con PCA'>
           <viewpoint>
             <zoom type='entire-view' />
           </viewpoint>
-          <highlight>
-            <color-one-way>
-              <field>[textscan.42190.815830578700].[none:alpha:ok]</field>
-            </color-one-way>
-          </highlight>
         </zone>
         <zone name='Miss Rate de kNN'>
           <viewpoint>
@@ -15267,7 +15258,7 @@
       <viewpoint>
       </viewpoint>
     </window>
-    <window auto-hidden='0' class='dashboard' maximized='1' name='Tiempo de Clasificación (Dashboard)'>
+    <window auto-hidden='0' class='dashboard' maximized='0' name='Tiempo de Clasificación (Dashboard)'>
       <zones>
         <zone name='Tiempo de Clasificación con PCA'>
           <viewpoint>
