@@ -161,6 +161,21 @@ A lo largo de este desarrollo hemos planteado distintas hipótesis que pasaremos
 
 \begin{figure}[H]
 \centering
+\includegraphics[scale=0.90]{TiempoClasificacionkNN.jpg}
+\caption{Tiempo promedio de clasificación para una partición según k.}
+\label{fig:TiempokNN}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.90]{TiempoClasificacionPCA.jpg}
+\caption{Tiempo promedio de clasificación para una partición según k/alpha (Eje horizontal superior: k. Eje horizontal inferior: alpha). }
+\label{fig:MissRatePCA}
+\end{figure}
+
+
+\begin{figure}[H]
+\centering
 \includegraphics[scale=0.90]{preprocesado.jpg}
 \caption{Tiempo de Preprocesado (Eje horizontal superior: k. Eje horizontal inferior: alpha)}
 \label{fig:Preprocesado}
@@ -212,7 +227,8 @@ Del gráfico se entiende que el Miss Rate promedio disminuye a medida que el k d
 
 Por esa razón, consideramos posible que para la elección de un k óptimo (en este método) no solo se debe tener en cuenta las frecuencias de los dígitos sino también la distancia entre los de un mismo grupo. kNN tiene la particularidad de considerar todos los pixeles de una imagen. En otras palabras, tiene en cuenta también las diferencias entre imágenes de un mismo dígito. Posiblemente considerar solo las frecuencias sea suficiente para el reconocimiento de dígitos escritos por una sola persona. Porque implicaría menor distancia entre imágenes de un mismo dígito.
 
-% FALTA HABLAR DE LOS TIEMPOS
+Los tiempos promedios para la clasificación son los de la Figura \ref{fig:TiemposkNN}. Esperábamos una mayor diferencia en los tiempos. Esto no ocurrió y nos hace suponer que el mayor tiempo de cálculo es destinado al calculo de distancias entre vectores y no a la cantidad de pops realizados a la cola de prioridad. Esto corroboraría la idea de que distintas normas, podrían ayudar a conseguir un mejor tiempo.
+
 \subsection*{Resultados PCA}
 
 En la experimentación de PCA, variamos tanto el k como el alpha. Los k elegidos son los tres mejores para kNN. Para alpha tomamos 7 porcentajes del tamaño de la imagen. Nuestra hipótesis consiste que para alphas muy grandes, el tiempo de cómputo es considerable y que el miss rate es bajo. En cambio, para alphas más chicos un tiempo de computo bajo acompañado de una peor tasa de predicción. 
@@ -229,5 +245,19 @@ Nos hace suponer que el análisis de componentes principales de los vectores nos
 
 % FALTA HABLAR DE LOS TIEMPOS DE COMPUTO
 
+Los tiempos promedios por partición para la clasificación se encuentran en la Figura \ref{fig:TiemposPCA}. El gráfico esta compuesto por tres ejes. El vertical se corresponde a los segundos promedios requeridos para clasificar una partición. El eje horizontal superior para el k, mientras que el inferior al alpha. 
+Considerando un análisis de complejidad del algoritmo y los resultados de kNN-Normal, supusimos que a menor alpha el tiempo de computo se reduciría. En kNN-Normal comprobamos que la mayor parte del cómputo esta atado a la dimensión del vector. Es por es que la reducción de componentes tiene un gran impacto en el tiempo. Esta hipótesis se corroboró independientemente del k, por los valores expresados en la Figura \ref{fig:TiemposPCA}.
 
+Es necesario considerar que el tiempo de cómputo de PCA no solo es la clasificación, sino también el preprocesado para la reducción de dimensionalidad de los vectores. La duración promedio del preprocesado esta plasmado en la Figura  \ref{fig:Preprocesado}. Los valores arrojados por la experimentación tienen un comportamiento constante. Se podría suponer esto sucede porque independientemente de la configuración de k/alpha, el cálculo de la matriz de covarianza es el mismo.
+
+Entonces a la hora de elegir la configuración óptima PCA, solo nos deberíamos concentrar en el comportamiento de la clasificación.
+
+Entre los alpha que obtienen un mejor Miss-Rate, el que tiene el mejor tiempo es siempre el alpha igual a 39. Eligiendo k igual a 17, seguimos obteniendo el mejor resultado tanto tiempo como en calidad de predicción.
+
+% ESTA PARTE PODRIA IR EN CONCLUSIÓN PORQUE COMPARAMOS AMBOS METODOS
+%***************************************
+ La ventaja en tiempo que brinda PCA será apreciada apartir de cierta cantidad de elementos a clasificar. Si los elementos a clasificar son solo los de una partición, kNN-Normal termina siendo una opción mas veloz. Asintóticamente PCA generaría un ahorro ejecutando varias corridas y aprovechando el mismo preprocesado, dado que el preprocesado se realiza una sola vez y es más rápido para clasificar.
+
+%**************************************
+Una nueva hipótesis que inferimos de estos resultados es que en el método de clasificación PCA, el k deja de ser un parámetro preponderante para el tiempo de ejecución. Queda relegado por el costo de preprocesado e impacto en la clasificación determinado por el parámetro alpha.
 \end{document}
