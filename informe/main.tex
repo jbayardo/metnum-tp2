@@ -9,6 +9,7 @@
 \usepackage{fixltx2e}
 \usepackage{cite}
 \usepackage{float}
+\usepackage{pdfpages}
 \geometry{
  a4paper,
  total={210mm,297mm},
@@ -32,17 +33,8 @@ A la vez con el objetivo de tener la descomposición en valores singulares imple
 \integrante{Gómez Fabián}{799/13}{fabiandagomez@hotmail.com} % obligatorio 
 \integrante{Keegan Maureen}{761/13}{maukeegan@hotmail.com} % obligatorio 
  
-
-
-
 \maketitle
 
-
-
-
-
-
- 
 \pagebreak
 %\newpage
 
@@ -126,7 +118,8 @@ Una vez hecho esto, aplicamos el algoritmo de kNN para terminar de resolver el p
 %Tras terminar toda la implementación para resolver el problema de reconocimiento de caracteres, queremos intentar ver cuán efectivo es nuestro algoritmo. Con esta intención, se busca aplicar la técnica de K-Fold Cross Validation que consta en dividir en dos los datos de entrada que en el algoritmo original se usaban como training test.
 Por último, implementamos K-Fold Cross Validation, que consiste en particionar la base de entrenamiento en dos nuevas bases: una de entrenamiento y una de testing. De este modo, conocemos los resultados esperados para cada imagen, y los guardamos en un vector, para poder luego compararlos con los resultados obtenidos. Si se quiere entonces probar la efectividad de un método, se debe aplicar K-Fold Cross Validation, y luego llamar a los métodos con las nuevas bases de training y de testing.
 
-Para levantar los datos de todos los archivos tuvimos un problema con la función .substr porque pensábamos que tomaba una posición de inicio y una de fin, y en realidad tomaba una posición de inicio y una longitud. 
+
+
 
 
 
@@ -138,16 +131,14 @@ A lo largo de este desarrollo hemos planteado distintas hipótesis que pasaremos
   \end{itemize}
   
   
-  Llegando al final del desarrollo del algoritmo no tuvimos mucho tiempo de realizar experimentos para probar dichas hipótesis planteadas. Aunque las bases teóricas avalen nuestras ideas, sabemos que una mala implementación de los algoritmos planteados puede llegar a traer malos resultados finales que no pudimos corroborar bien.
-  
-  Nuestra idea de qué puede ser los cálculos de los autovalores o el cálculo de la matriz de covarianza. Viendo esto, igual quisimos probar el hit/miss rate y nos dió un valor de $67\%$
  
 
 \section*{Resultados}{}
+
 \begin{figure}[H]
 \centering
 \includegraphics[scale=0.90]{MissRatedekNN.jpg}
-\caption{Miss Rate de kNN. Miss Rate en función de k.}
+\caption{Miss Rate de kNN en función de k.}
 \label{fig:MissRatekNN}
 \end{figure}
 
@@ -170,25 +161,29 @@ A lo largo de este desarrollo hemos planteado distintas hipótesis que pasaremos
 \centering
 \includegraphics[scale=0.90]{TiempoClasificacionPCA.jpg}
 \caption{Tiempo promedio de clasificación para una partición según k/alpha (Eje horizontal superior: k. Eje horizontal inferior: alpha). }
-\label{fig:MissRatePCA}
+\label{fig:TiempoPCA}
 \end{figure}
 
 
 \begin{figure}[H]
 \centering
 \includegraphics[scale=0.90]{preprocesado.jpg}
-\caption{Tiempo de Preprocesado (Eje horizontal superior: k. Eje horizontal inferior: alpha)}
+\caption{Tiempo de preprocesado promedio para una partición según k/alpha  (Eje horizontal superior: k. Eje horizontal inferior: alpha)}
 \label{fig:Preprocesado}
+\end{figure} 
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.90]{MissRatesdePCAK3.jpg}
+\caption{Miss Rate promedio en función de k (eje horizontal superior) y alpha (eje superior horizontal). Experimentación con K=3.}
+\label{fig:MissRatePCA3}
 \end{figure} 
 
 \pagebreak
 
-
 \section*{Discusión}{}
 
-
-
-\subsection*{Consideraciones para los experimentos.}
+\subsection*{Consideraciones para los experimentos}
 
 Para explicar la elección de los valores de k debemos primero dar una pequeña introducción.  Para ello calculamos la cantidad de apariciones de cada dígito en el training set y este fue el resultado:
 
@@ -200,10 +195,10 @@ Para explicar la elección de los valores de k debemos primero dar una pequeña 
 
 El dígito 5 tiene el mínimo porcentaje de apariciones siendo este aproximadamente $9.03\%$.  Dividimos el training set en 10 particiones aleatorias y disjuntas utilizando MATLAB. Como la división es aleatoria, asumimos que $9.03$ sigue siendo el porcentaje menor de apariciones para cualquiera de ellas. 
 
-Por cada corrida del método, se utiliza una partición de 4200 imágenes como testing set, y las restantes 9 particiones como training set (ejecutando todas las combinaciones).  Entonces para un caso, el nuevo training set contiene 37800 imágenes. El $9.03\%$ de 37800 es un estimativo de la mínima cantidad de apariciones del dígito 5. Es sobre este número que elegimos el k, tomando 7 distintos porcentajes. Creemos que al trabajar con el mínimo valor de apariciones de un dígito del training set, evitamos caer en problemas de sobreclasificación.
-
+Por cada corrida del método, se utiliza una partición de 4200 imágenes como testing set, y las restantes 9 particiones como training set (ejecutando todas las combinaciones).  Entonces para un caso, el nuevo training set contiene 37800 imágenes. El $9.03\%$ de 37800 es un estimativo de la mínima cantidad de apariciones del dígito 5. Es sobre este número que elegimos el k, tomando 7 distintos porcentajes. En concreto, tener un $k$ mayor a la cantidad estimada de elementos de una clase podría obligarnos a considerar elementos que no pertenecen a la clase dentro de la votación; haciendo que en casos que pertenezcan a las clases menos representadas pueda ocasionarse una tendencia a clasificar mal.
 
 Definimos $min$ = $9.03\%$ de 37800. Los k elegidos para la experimentación son: \newline
+
 \begin{center}
 \begin{tabular}{ l | c }
  k & Porcentaje de $min$  \\
@@ -217,11 +212,14 @@ Definimos $min$ = $9.03\%$ de 37800. Los k elegidos para la experimentación son
 
 \end{tabular}
 \end{center}
-\\
+
+Además consideramos que el Miss Rate $\in [0,1]$ y sigue la siguiente fórmula:
+
+$$\frac{\#clasificacionesErr\acute{o}neas}{\#testingSet}$$
 
 \subsection*{Resultados kNN-Normal}
 
-La Figura \ref{fig:MissRatekNN} muestra en función de k  los Miss Rate promedio de 10 corridas del método. Para cada una de las 10 corridas, una partición es utilizada como testing set y el resto como training set.
+La Figura \ref{fig:MissRatekNN} muestra en función de k los Miss Rate promedio de 10 corridas del método. Para cada una de las 10 corridas, una partición es utilizada como testing set y el resto como training set.
 
 En el gráfico vemos que el Miss Rate promedio disminuye a medida que el k desciende. Es decir, se obtienen mejores predicciones al disminuir el k. Los datos obtenidos contradijeron nuestra primera suposición.
 
@@ -231,7 +229,7 @@ Los tiempos promedios para la clasificación son los de la Figura \ref{fig:Tiemp
 
 \subsection*{Resultados PCA}
 
-En la experimentación de PCA, variamos tanto el k como el alpha. Como k elegimos los tres mejores para kNN y como alpha tomamos 7 porcentajes del tamaño de la imagen. Nuestra hipótesis consiste que para alphas muy grandes, el tiempo de cómputo es considerable y que el miss rate es bajo. En cambio, para alphas más chicos un tiempo de computo bajo acompañado de una peor tasa de predicción. 
+En la experimentación de PCA, variamos tanto el k como el alpha. Como k elegimos los tres mejores para kNN y como alpha tomamos 7 porcentajes del tamaño de la imagen. Nuestra hipótesis consiste en que para alphas muy grandes, el tiempo de cómputo es considerable y que el miss rate es bajo. En cambio, para alphas más chicos un tiempo de computo bajo es acompañado por una peor tasa de predicción. 
 
 En los gráficos correspondientes a la experimentación con PCA, tuvimos la misma metodología que para kNN-Normal. Usando 10 particiones fuimos considerando cada una como testing set y el resto como training set.
 
@@ -239,25 +237,56 @@ La Figura \ref{fig:MissRatePCA} nos provee los resultados de las corridas del m�
 
 El Miss Rate Promedio se comportó igual para todos los k. Disminuir el alpha implicó mejores predicciones hasta cierto punto. Desde el valor 7 para alpha, la calidad de las predicciones empeora. 
 
-Estos resultados confirmaron parte de nuestra hipótesis: no es necesario trabajar con todas las componentes de las imágenes. Es posible obtener mejores predicciones si uno no trabaja con el total de la imágen. 
+Estos resultados confirmaron parte de nuestra hipótesis: no es necesario trabajar con todas las componentes de las imágenes. Es posible obtener mejores predicciones si uno no trabaja con el total de la imagen. 
 
-Nos hace suponer que el análisis de componentes principales de los vectores nos ayuda a descartar los pixeles que no son cruciales para la diferenciación de dígitos y además concentrarnos en las similitudes entre las imágenes de un mismo dígito. Mejorando el escenario desfavorable de kNN-Normal con imágenes muy distintas para un mismo dígito.
+Los resultados nos hacen suponer que el análisis de componentes principales de los vectores nos ayuda a descartar los píxeles que no son cruciales para la diferenciación de dígitos y además concentrarnos en las similitudes entre las imágenes de un mismo dígito. De este modo se mejora el escenario desfavorable de kNN-Normal con imágenes muy distintas para un mismo dígito.
 
-% FALTA HABLAR DE LOS TIEMPOS DE COMPUTO
 
-Los tiempos promedios por partición para la clasificación se encuentran en la Figura \ref{fig:TiemposPCA}. El gráfico esta compuesto por tres ejes. El vertical se corresponde a los segundos promedios requeridos para clasificar una partición. El eje horizontal superior para el k, mientras que el inferior al alpha. 
-Considerando un análisis de complejidad del algoritmo y los resultados de kNN-Normal, supusimos que a menor alpha el tiempo de computo se reduciría. En kNN-Normal comprobamos que la mayor parte del cómputo esta atado a la dimensión del vector. Es por es que la reducción de componentes tiene un gran impacto en el tiempo. Esta hipótesis se corroboró independientemente del k, por los valores expresados en la Figura \ref{fig:TiemposPCA}.
+Los tiempos promedios por partición para la clasificación se encuentran en la Figura \ref{fig:TiempoPCA}. El gráfico esta compuesto por tres ejes. El vertical se corresponde al tiempo (segundos) promedio para clasificar una partición. El eje horizontal superior al k, mientras que el inferior al alpha. 
 
-Es necesario considerar que el tiempo de cómputo de PCA no solo es la clasificación, sino también el preprocesado para la reducción de dimensionalidad de los vectores. La duración promedio del preprocesado esta plasmado en la Figura  \ref{fig:Preprocesado}. Los valores arrojados por la experimentación tienen un comportamiento constante. Se podría suponer esto sucede porque independientemente de la configuración de k/alpha, el cálculo de la matriz de covarianza es el mismo.
+Considerando un análisis de complejidad del algoritmo y los resultados de kNN-Normal, supusimos que a menor alpha el tiempo de computo se reduciría. En kNN-Normal comprobamos que la mayor parte del cómputo está atado a la dimensión del vector. Es por esto que la reducción de componentes tiene un gran impacto en el tiempo. Esta hipótesis se corroboró independientemente del k, por los valores expresados en la Figura \ref{fig:TiempoPCA}.
+
+Es necesario considerar que el tiempo de cómputo de PCA no solo es la clasificación, sino también el preprocesado para la reducción de dimensionalidad de los vectores. La duración promedio del preprocesado esta plasmado en la Figura  \ref{fig:Preprocesado}. Los valores arrojados por la experimentación tienen un comportamiento constante. Se podría suponer que esto sucede porque independientemente de la configuración de k/alpha, el tamaño de la matriz de covarianza para cada caso es el mismo.
 
 Entonces a la hora de elegir la configuración óptima PCA, solo nos deberíamos concentrar en el comportamiento de la clasificación.
 
-Entre los alpha que obtienen un mejor Miss-Rate, el que tiene el mejor tiempo es siempre el alpha igual a 39. Eligiendo k igual a 17, seguimos obteniendo el mejor resultado tanto tiempo como en calidad de predicción.
+En nuestros experimentos, el alpha que logra el menor tiempo y el mejor Miss Rate resulta ser siempre el 39. Eligiendo k igual a 17, obtenemos el mejor resultado tanto en tiempo como en calidad de predicción.
 
 % ESTA PARTE PODRIA IR EN CONCLUSIÓN PORQUE COMPARAMOS AMBOS METODOS
 %***************************************
- La ventaja en tiempo que brinda PCA será apreciada apartir de cierta cantidad de elementos a clasificar. Si los elementos a clasificar son solo los de una partición, kNN-Normal termina siendo una opción mas veloz. Asintóticamente PCA generaría un ahorro ejecutando varias corridas y aprovechando el mismo preprocesado, dado que el preprocesado se realiza una sola vez y es más rápido para clasificar.
+ 
+\subsection*{Análisis sobre el cambio de $K$}
 
-%**************************************
-Una nueva hipótesis que inferimos de estos resultados es que en el método de clasificación PCA, el k deja de ser un parámetro preponderante para el tiempo de ejecución. Queda relegado por el costo de preprocesado e impacto en la clasificación determinado por el parámetro alpha.
+A modo de estudiar los posibles cambios que puedan motivar tomar nuevos valores de $K$, decidimos volver a correr los experimentos de PCA. Intuitivamente, cambiar el $K$ va a representar un cambio en la cantidad de elementos del training y del testing set. Notemos que un cambio en el training set implica también más, o menos, representantes dentro de las clases de equivalencia, mientras que un cambio en el testing set implica que la cantidad de elementos para medir la eficiencia del modelo se modifica. Es decir, tenemos un trade-off entre la capacidad del modelo para predecir y la confianza que podemos tener en los resultados de nuestros experimentos.
+
+Si bien no podemos cuantificar el efecto de un cambio de $K$ en términos tan generales, decidimos volver a correr los experimentos para PCA, a modo de poder observar qué resultados trae en concreto este cambio, así como forma de verificar que los resultados que ya habíamos obtenido fueran consistentes con los cambios de esta variable.
+
+Elegimos para este experimento utilizar $K = 3$, ya que observemos que esto reduce la cantidad de elementos que tenemos para hacer training, y aumenta en un 20\% sobre el total la cantidad de entradas para testear el modelo. En concreto, los resultados están en el gráfico \ref{fig:MissRatePCA3}. En particular, decidimos volver a correr los experimentos sobre la partición óptima que habíamos encontrado antes. Observemos que, a pesar de haber variado ampliamente la cantidad de representantes de las clases de equivalencia, el miss rate varió hasta 0.00477 en el peor de los casos, con mayor cantidad de misses cuando $K=3$ y $\alpha = 196$. Es decir, los resultados fueron ampliamente similares. Observemos que esto nos indica, además, que el modelo elegido es lo suficientemente robusto como para soportar training sets más chicos de los que veníamos tomando.
+
+Sería interesante a futuro ver qué tan chico podemos tomar el tamaño y mantener los niveles de eficiencia, así como explorar el efecto de esta variable en el caso de kNN sin PCA. Suponemos que la eficiencia de kNN + PCA se mantuvo en parte gracias al preprocesado con PCA: dado que guardamos solo las componentes de mayor variabilidad en el training set, suponemos que las mismas no deberían cambiar demasiado al sacar algunos elementos, y por lo tanto seguiríamos reteniendo una muy buena representación de los datos. Es decir, estimamos que probablemente los miss rates de kNN con $K=3$ tengan mayores diferencias con sus versiones de $K=10$ en comparación con la versión que utiliza PCA.
+
+\section*{Conclusiones}
+
+A partir de los experimentos que llevamos a cabo, una conclusión a destacar fue la de decidir cuándo es conveniente utilizar PCA, y cuándo kNN. Vimos que kNN tiene un costo temporal alto que se relaciona fuertemente con el tamaño de las imágenes a considerar. Por otra parte, PCA tiene un costo temporal mucho mayor para el preprocesado del training set. La ventaja en tiempo que brinda PCA será apreciada a partir de cierta cantidad de elementos a clasificar, ya que se amortizaría el costo del preprocesado. Si no, kNN-Normal termina siendo una opción mas veloz. De este modo vemos que no siempre aplicar PCA para reducir las dimensiones de los elementos a comparar es conveniente, lo que contradice nuestra primera hipótesis.
+
+Por otra parte, notamos que el k no es un parámetro preponderante para el tiempo de ejecución tanto para kNN como para PCA. Sí lo es, en cambio, para la efectividad de la clasificación en ambos métodos.
+
+En el contexto del problema, la experimentación arrojó como k ideal al 17. Suponemos que disminuyéndolo es posible encontrar uno mejor. Sin embargo, a partir de cierto punto achicar el k puede ser contraproducente, como sucedió con el alpha en la experimentación.
+
+Con respecto al alpha ideal en nuestra experimentación resulta ser el 39 y podemos ver que valores menores o iguales a 7 resultan en un deterioro en la capacidad de predicción. En base a esto concluimos que el alpha ideal se encuentra en el intervalo $(7,39)$.    
+\section{Apéndices}
+
+\subsection{Apéndice A: Enunciado}
+\includepdf[pages={1, 2, 3, 4}]{../docs/enunciado.pdf}
+
+\subsection{Apéndice B: Código relevante}
+
+\includepdf[pages={1, 2, 3, 4, 5, 6, 7, 8}]{codigo/main.pdf}
+\includepdf[pages={1, 2}]{codigo/matrixh.pdf}
+\includepdf[pages={1, 2}]{codigo/matrixc.pdf}
+\includepdf[pages={1}]{codigo/linalgh.pdf}
+\includepdf[pages={1, 2, 3}]{codigo/linalgc.pdf}
+\includepdf[pages={1, 2, 3}]{codigo/counter.pdf}
+
+
 \end{document}
