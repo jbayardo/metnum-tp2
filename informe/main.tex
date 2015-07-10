@@ -25,7 +25,8 @@
 \titulo{Trabajo Práctico 2} % obligatorio
 \subtitulo{Si nos organizamos aprobamos todos...} % opcional
 \grupo{El siguiente trabajo consiste en la implementación de algoritmos que reciben una imagen y deciden qué dígito representa. Para ello se implementa el algoritmo de KNN, con una reducción de dimensión previa utilizando PCA.
-A la vez con el objetivo de tener la descomposición en valores singulares implementamos el algoritmo de Método de la Potencia con Deflación para la estimación de Autovalores y Autovectores de la Matriz de Covarianza.       
+A la vez con el objetivo de tener la descomposición en valores singulares implementamos el algoritmo de Método de la Potencia con Deflación para la estimación de Autovalores y Autovectores de la Matriz de Covarianza. \newline 
+Palabras Claves: KNN, PCA , Autovectores, Autovalores, Método de la potencia, Método de deflación
 \\
 }
 \integrante{Bayardo Julián}{850/13}{julian@bayardo.com.ar} % obligatorio
@@ -33,6 +34,7 @@ A la vez con el objetivo de tener la descomposición en valores singulares imple
 \integrante{Gómez Fabián}{799/13}{fabiandagomez@hotmail.com} % obligatorio 
 \integrante{Keegan Maureen}{761/13}{maukeegan@hotmail.com} % obligatorio 
  
+
 \maketitle
 
 \pagebreak
@@ -274,19 +276,19 @@ Que nos inclina a preguntarnos si cambiar la norma utilizada por alguna otra nos
 
 Otro experimento posible que pensamos que sería interesante, es extender el dataset: si pudiesemos tomar las imágenes que ya tenemos, y aplicar pequeñas rotaciones (algo del estilo de como escribimos en cursiva), agregando estas pequeñas rotaciones como nuevas imágenes en el training set, ¿mejoraría la eficiencia del modelo?. Pensamos que probablemente sí, ya que observemos que una rotación pequeña de un vector en el espacio va a seguír estando dentro de la clase de equivalencia del dígito particular, y por lo tanto no deberíamos estar haciendo más que amplificando la cantidad de datos, ayudando a que los elementos que pertenecen a una misma clase se propaguen, y haciendo que los "bordes" de clasificación se hagan más suaves.
 
-\section{Apéndices}
+%\section{Apéndices}
 
-\subsection{Apéndice A: Enunciado}
-\includepdf[pages={1, 2, 3, 4}]{../docs/enunciado.pdf}
+%\subsection{Apéndice A: Enunciado}
+%\includepdf[pages={1, 2, 3, 4}]{../docs/enunciado.pdf}
 
-\subsection{Apéndice B: Código relevante}
+%\subsection{Apéndice B: Código relevante}
 
-\includepdf[pages={1, 2, 3, 4, 5, 6, 7, 8}]{codigo/main.pdf}
-\includepdf[pages={1, 2}]{codigo/matrixh.pdf}
-\includepdf[pages={1, 2}]{codigo/matrixc.pdf}
-\includepdf[pages={1}]{codigo/linalgh.pdf}
-\includepdf[pages={1, 2, 3}]{codigo/linalgc.pdf}
-\includepdf[pages={1, 2, 3}]{codigo/counter.pdf}
+%\includepdf[pages={1, 2, 3, 4, 5, 6, 7, 8}]{codigo/main.pdf}
+%\includepdf[pages={1, 2}]{codigo/matrixh.pdf}
+%\includepdf[pages={1, 2}]{codigo/matrixc.pdf}
+%\includepdf[pages={1}]{codigo/linalgh.pdf}
+%\includepdf[pages={1, 2, 3}]{codigo/linalgc.pdf}
+%\includepdf[pages={1, 2, 3}]{codigo/counter.pdf}
 
 
 \end{document}
